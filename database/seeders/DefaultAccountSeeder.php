@@ -41,6 +41,14 @@ class DefaultAccountSeeder extends Seeder
             ]
         );
         $student->assignRole('student');
+        $student = User::firstOrCreate(
+            ['email' => 'applicant@gmail.com'],
+            [
+                'name' => 'Applicant User',
+                'password' => Hash::make('password'),
+            ]
+        );
+        $student->assignRole('student');
 
         $this->command->info('✅ Default users created and assigned roles.');
     }

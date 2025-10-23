@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\DefaultAccountSeeder;
+use Database\Seeders\PersonalInformationSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -17,6 +18,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RoleSeeder::class,
-            DefaultAccountSeeder::class]);
+            DefaultAccountSeeder::class,
+            PersonalInformationSeeder::class
+        ]);
     }
 }
