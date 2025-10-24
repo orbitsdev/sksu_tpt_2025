@@ -19,6 +19,9 @@ use Filament\Tables\Table;
 class PersonalInformationResource extends Resource
 {
     protected static ?string $model = PersonalInformation::class;
+protected static ?string $modelLabel = 'Student Information';
+protected static ?string $pluralModelLabel = 'Student Records';
+
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::Users;
 

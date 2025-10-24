@@ -17,7 +17,7 @@ class PersonalInformationTable
     {
         return $table
          ->modifyQueryUsing(fn (Builder $query) =>
-         $query->whereHas('user', fn(Builder $query) => $query->whereHas('roles', fn(Builder $query) => $query->where('name', 'student'))))
+         $query->whereHas('user', fn(Builder $query) => $query->whereHas('roles', fn(Builder $query) => $query->where('name', 'student')))->latest())
          ->striped()
             ->columns([
                 TextColumn::make('user.email')->searchable(),
