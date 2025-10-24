@@ -20,9 +20,9 @@ class PersonalInformationResource extends Resource
 {
     protected static ?string $model = PersonalInformation::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::Users;
 
-    protected static ?string $recordTitleAttribute = 'PersonalInformation';
+    // protected static ?string $recordTitleAttribute = 'PersonalInformation';
 
     public static function form(Schema $schema): Schema
     {

@@ -2,10 +2,12 @@
 
 namespace App\Filament\Resources\PersonalInformation\Schemas;
 
-use Filament\Forms\Components\DatePicker;
+use App\Models\User;
+use Filament\Schemas\Schema;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Schema;
+use Filament\Forms\Components\DatePicker;
+use Illuminate\Database\Eloquent\Builder;
 
 class PersonalInformationForm
 {
@@ -13,14 +15,32 @@ class PersonalInformationForm
     {
         return $schema
             ->components([
-                TextInput::make('user_id')
-                    ->numeric(),
+                Select::make('user_id')
+                    ->label('Account')
+                    ->options(User::query()->whereHas('roles', fn(Builder $query) => $query->where('name', 'student'))->whereDoesntHave('personalInformation')->pluck('name', 'id'))
+                    ->getSearchResultsUsing(fn(string $search): array => User::query()
+
+
+
+                        ->where('name', 'like', "%{$search}%")
+                        ->limit(50)
+                        ->pluck('name', 'id')
+                        ->all())
+                    ->disabled(function ($operation) {
+                        return $operation === 'edit';
+                    })
+                    ->getOptionLabelUsing(fn($value): ?string => User::find($value)?->name)
+                    ->preload(),
                 TextInput::make('first_name')
                     ->required(),
                 TextInput::make('middle_name'),
                 TextInput::make('last_name')
                     ->required(),
-                TextInput::make('suffix'),
+               TextInput::make('suffix')
+    ->label('Suffix')
+    ->datalist(['Jr.', 'Sr.', 'II', 'III', 'IV'])
+    ->placeholder('e.g. Jr.')
+    ->maxLength(5),
                 TextInput::make('nickname'),
                 Select::make('sex')
                     ->options(['Male' => 'Male', 'Female' => 'Female', 'Other' => 'Other']),
