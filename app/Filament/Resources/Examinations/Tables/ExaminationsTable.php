@@ -25,6 +25,8 @@ class ExaminationsTable
             ->columns([
                 TextColumn::make('title')
                     ->searchable(),
+                        TextColumn::make('total_slots')
+                    ->sortable(),
                 TextColumn::make('start_date')
                     ->date()
                     ->sortable(),
