@@ -9,6 +9,7 @@ use Illuminate\Database\Seeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\CampusSeeder;
 use Database\Seeders\ProgramSeeder;
+use Database\Seeders\ExaminationSeeder;
 use Database\Seeders\DefaultAccountSeeder;
 use Database\Seeders\PersonalInformationSeeder;
 
@@ -25,6 +26,7 @@ class DatabaseSeeder extends Seeder
             PersonalInformationSeeder::class,
             CampusSeeder::class,
             ProgramSeeder::class,
+               ExaminationSeeder::class,
 
         ]);
     }
