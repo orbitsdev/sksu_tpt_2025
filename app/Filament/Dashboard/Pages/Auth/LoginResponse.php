@@ -17,15 +17,15 @@ class LoginResponse implements LoginResponseContract
             return redirect()->to($intendedUrl);
         }
         // dd(Auth::user()->hasRole('admin'));
-        if(Auth::user()->hasRole('admin')) {
-            return redirect()->route('admin-dashboard');
-        }
-        if(Auth::user()->hasRole('staff')) {
-            return redirect()->route('staff.dashboard');
-        }
-        if(Auth::user()->hasRole('student')) {
-            return redirect()->route('student.dashboard');
-        }
+        // if(Auth::user()->hasRole('admin')) {
+        //     return redirect()->route('admin-dashboard');
+        // }
+        // if(Auth::user()->hasRole('staff')) {
+        //     return redirect()->route('staff.dashboard');
+        // }
+        // if(Auth::user()->hasRole('student')) {
+        //     return redirect()->route('student.dashboard');
+        // }
 
         return redirect()->intended(filament()->getUrl());
     }

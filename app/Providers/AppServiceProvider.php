@@ -8,6 +8,8 @@ use Illuminate\Support\ServiceProvider;
 use Filament\Support\Facades\FilamentAsset;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse as LoginResponseContract;
 use App\Filament\Dashboard\Pages\Auth\LoginResponse;
+use App\Filament\Dashboard\Pages\Auth\LogoutResponse;
+use Filament\Auth\Http\Responses\Contracts\LogoutResponse as LogoutResponseContract;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -16,6 +18,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(LoginResponseContract::class, LoginResponse::class);
+          $this->app->bind(LogoutResponseContract::class, LogoutResponse::class);
     }
 
     /**

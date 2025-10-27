@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::create('campuses', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->enum('type', ['main','satellite'])->default('main');
+            $table->string('contact_email')->nullable();
+            $table->string('contact_number')->nullable();
             $table->timestamps();
         });
     }
