@@ -25,7 +25,7 @@ return new class extends Migration
             //  Status Flags
             $table->boolean('is_published')->default(false)->comment('Indicates if the exam details are published');
             $table->boolean('is_application_open')->default(false)->comment('Determines if examinee registration is open');
-$table->unsignedInteger('total_slots')->default(0)->comment('Total available slots for examinees');
+            $table->unsignedInteger('total_slots')->default(0)->comment('Total available slots for examinees');
             //  Academic Details
             $table->string('school_year')->nullable()->comment('Academic year, e.g. 2025-2026');
             $table->string('type')->nullable()->comment('Exam type, e.g. Entrance, Midterm, Final');

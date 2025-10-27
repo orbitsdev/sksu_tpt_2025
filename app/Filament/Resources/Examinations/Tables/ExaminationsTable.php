@@ -17,6 +17,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\ToggleColumn;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\Builder;
 class ExaminationsTable
 {
     public static function configure(Table $table): Table
@@ -118,6 +119,8 @@ class ExaminationsTable
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->modifyQueryUsing(fn (Builder $query) => $query->latest())
+            ;
     }
 }

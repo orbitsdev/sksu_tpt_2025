@@ -11,6 +11,18 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
+Route::get('/admin-dashboard',function(){
+    return 'test dashobard ';
+})->name('admin-dashboard');
+
+Route::get('/staff/dashboard', function () {
+    return 'staff dashobard ';
+})->name('staff.dashboard');
+
+Route::get('/student-dashboard', function () {
+    return 'student dashobard ';
+})->name('student.dashboard');
+
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth'])
     ->name('dashboard');
