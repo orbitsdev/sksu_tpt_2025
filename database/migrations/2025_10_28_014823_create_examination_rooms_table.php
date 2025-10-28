@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('examination_slot_id')->constrained()->onDelete('cascade');
             $table->string('room_number')->comment('e.g. Room 1, Room 2, Annex A');
             $table->unsignedInteger('capacity')->default(0);
+            $table->unsignedInteger('occupied')->default(0);
+
             $table->timestamps();
         });
     }
