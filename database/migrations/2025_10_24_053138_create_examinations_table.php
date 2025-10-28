@@ -16,8 +16,8 @@ return new class extends Migration
             //  Basic Info
             $table->string('title')->comment('Name or title of the examination');
             //  Schedule
-            $table->date('start_date')->comment('Exam opening or first day');
-            $table->date('end_date')->comment('Exam closing or last day');
+            $table->date('start_date')->nullable()->comment('Exam opening or first day');
+            $table->date('end_date')->nullable()->comment('Exam closing or last day');
 
             //  Location / Venue
             $table->string('venue')->nullable()->comment('Physical location or testing site');
@@ -25,8 +25,7 @@ return new class extends Migration
             //  Status Flags
             $table->boolean('is_published')->default(false)->comment('Indicates if the exam details are published');
             $table->boolean('is_application_open')->default(false)->comment('Determines if examinee registration is open');
-            $table->unsignedInteger('total_slots')->default(0)->comment('Total available slots for examinees');
-            //  Academic Details
+            $table->boolean('show_result')->default(false)->comment('Determines if examinee result is displayed');
             $table->string('school_year')->nullable()->comment('Academic year, e.g. 2025-2026');
             $table->string('type')->nullable()->comment('Exam type, e.g. Entrance, Midterm, Final');
 
