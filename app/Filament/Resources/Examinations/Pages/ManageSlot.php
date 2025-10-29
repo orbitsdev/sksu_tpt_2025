@@ -2,26 +2,31 @@
 
 namespace App\Filament\Resources\Examinations\Pages;
 
-use App\Models\Campus;
-use Filament\Tables\Table;
-use Filament\Actions\Action;
-use App\Models\ExaminationSlot;
-use Filament\Resources\Pages\Page;
-use Illuminate\Support\Facades\DB;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Contracts\HasTable;
-use Filament\Forms\Components\TextInput;
-use Filament\Notifications\Notification;
-use Filament\Forms\Components\DatePicker;
-use Filament\Tables\Columns\ToggleColumn;
-use Filament\Actions\Contracts\HasActions;
-use Filament\Schemas\Contracts\HasSchemas;
-use Filament\Tables\Concerns\InteractsWithTable;
-use Filament\Schemas\Concerns\InteractsWithSchemas;
-use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use App\Filament\Resources\Examinations\ExaminationResource;
+use App\Models\Campus;
+use App\Models\ExaminationRoom;
+use App\Models\ExaminationSlot;
+use Filament\Actions\Action;
+use Filament\Actions\Contracts\HasActions;
+use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\Concerns\InteractsWithRecord;
+use Filament\Resources\Pages\Page;
+use Filament\Schemas\Concerns\InteractsWithSchemas;
+use Filament\Schemas\Contracts\HasSchemas;
+use Filament\Support\Enums\Width;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Table;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\DB;
 
 class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
 {
@@ -39,6 +44,13 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
 
     }
 
+    public function getTitle(): string|Htmlable
+    {
+        // Supposons que $this->record est l'enregistrement du modèle que vous visualisez.
+
+        return "{$this->record?->title} Slots";
+    }
+
     public function addSlotAction(): Action
     {
         return Action::make('addSlot')
@@ -53,72 +65,153 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query(ExaminationSlot::query())
+            ->query(
+                ExaminationSlot::query()
+                    ->where('examination_id', $this->record->id)
+                    ->with(['examination', 'campus', 'rooms'])
+            )
             ->columns([
-                TextColumn::make('examination.title')->searchable(),
-                TextColumn::make('campus.name')->searchable(),
-                TextColumn::make('building_name')->searchable(),
-                TextColumn::make('slots')->money(),
-                TextColumn::make('date_of_exam')->date(),
-                ToggleColumn::make('is_active'),
+                TextColumn::make('campus.name')
+                    ->label('Campus')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('building_name')
+                    ->label('Building')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('date_of_exam')
+                    ->label('Exam Date')
+                    ->date(),
+
+                TextColumn::make('number_of_rooms')
+                    ->label('# Rooms')
+                    ->alignCenter(),
+
+                // 🧮 Total capacity (sum of room capacities)
+                TextColumn::make('total_capacity')
+                    ->label('Total Capacity')
+                    ->alignCenter()
+
+                    ->getStateUsing(fn ($record) => $record->rooms->sum('capacity')),
+
+                // 👥 Occupied seats (sum of room.occupied)
+                TextColumn::make('occupied')
+                    ->label('Occupied')
+                    ->alignCenter()
+
+                    ->getStateUsing(fn ($record) => $record->rooms->sum('occupied')),
+
+                // 🎯 Remaining = capacity - occupied
+                TextColumn::make('remaining')
+                    ->label('Available')
+                    ->alignCenter()
+
+                    ->getStateUsing(function ($record) {
+                        $capacity = $record->rooms->sum('capacity');
+                        $occupied = $record->rooms->sum('occupied');
+                        $remaining = max($capacity - $occupied, 0);
+                        $color = $remaining > 0 ? 'green' : 'red';
+
+                        return new \Illuminate\Support\HtmlString("<strong style='color:{$color}'>{$remaining}</strong>");
+                    }),
+
+                ToggleColumn::make('is_active')
+                    ->label('Active')
+                    ->alignCenter(),
             ])
             ->headerActions([
 
                 Action::make('Create Slot')->schema([
-                    // TextInput::make('title')->required(),
                     Select::make('campus_id')
                         ->label('Campus')
-                        ->options(Campus::query()->whereDoesntHave('examinationSlots', function ($query) {
-                            $query->where('examination_id', $this->record->id);
-                        })->pluck('name', 'id'))
-                        ->getSearchResultsUsing(fn (string $search): array => Campus::query()
-                            ->where('name', 'like', "%{$search}%")
-                            ->limit(50)
-                            ->pluck('name', 'id')
-                            ->all())
-                        ->getOptionLabelUsing(fn ($value): ?string => Campus::find($value)?->name)
-                        ->preload(),
-                    TextInput::make('building_name')->required(),
-                    TextInput::make('slots')->required()->mask('999999999'),
-                  DatePicker::make('date_of_exam')
-    ->label('Date of Examination')
-    ->required()
-    ->minDate(now()),
-    Toggle::make('is_active')->required()->label('Active'),
+                        ->options(Campus::query()
+                            ->whereDoesntHave('examinationSlots', function ($query) {
+                                $query->where('examination_id', $this->record->id);
+                            })
+                            ->pluck('name', 'id'))
+                        ->searchable()
+                        ->required(),
+
+                    TextInput::make('building_name')
+                        ->label('Building Name')
+                        ->required(),
+
+                    DatePicker::make('date_of_exam')
+                        ->label('Date of Examination')
+                        ->required()
+                        ->minDate(now()),
+
+                    TextInput::make('number_of_rooms')
+                        ->numeric()
+                        ->label('Number of Rooms')
+                        ->required()
+                        ->minValue(1)
+                        ->helperText('Number of physical rooms available.'),
+
+                    TextInput::make('slots')
+                        ->numeric()
+                        ->label('Total Slots')
+                        ->required()
+                        ->minValue(1)
+                        ->helperText('Total examinees that can be accommodated.'),
+
+                    Toggle::make('is_active')
+                        ->label('Active')
+                        ->default(true),
 
                 ])->action(function (array $data) {
 
                     DB::beginTransaction();
+                    try {
+                        $examination = $this->getRecord();
 
-        try {
-            $examination = $this->getRecord();
+                        // Create examination slot
+                        $slot = ExaminationSlot::create([
+                            'examination_id' => $examination->id,
+                            'campus_id' => $data['campus_id'],
+                            'building_name' => $data['building_name'],
+                            'date_of_exam' => $data['date_of_exam'],
+                            'slots' => $data['slots'],
+                            'number_of_rooms' => $data['number_of_rooms'],
+                            'is_active' => $data['is_active'],
+                        ]);
 
-            ExaminationSlot::create([
-                'examination_id' => $examination->id,
-                'campus_id' => $data['campus_id'],
-                'building_name' => $data['building_name'],
-                'slots' => $data['slots'],
-                'date_of_exam' => $data['date_of_exam'],
-                'is_active' => $data['is_active'],
-            ]);
+                        // ✅ Auto-generate examination rooms
+                        $rooms = [];
+                        $capacityPerRoom = floor($data['slots'] / $data['number_of_rooms']);
+                        $remainder = $data['slots'] % $data['number_of_rooms'];
 
-            DB::commit();
+                        for ($i = 1; $i <= $data['number_of_rooms']; $i++) {
+                            $capacity = $capacityPerRoom + ($i === 1 ? $remainder : 0); // handle uneven division
+                            $rooms[] = [
+                                'examination_slot_id' => $slot->id,
+                                'room_number' => 'Room '.$i,
+                                'capacity' => $capacity,
+                                'occupied' => 0,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ];
+                        }
 
-            Notification::make()
-                ->title('Slot Created Successfully')
-                ->success()
-                ->send();
-        } catch (\Exception $e) {
-            DB::rollBack();
+                        ExaminationRoom::insert($rooms);
 
-            Notification::make()
-                ->title('Error Creating Slot')
-                ->body($e->getMessage())
-                ->danger()
-                ->send();
-        }
+                        DB::commit();
 
-
+                        Notification::make()
+                            ->title('Slot Created')
+                            ->body('Slot and corresponding rooms generated successfully.')
+                            ->success()
+                            ->send();
+                    } catch (\Throwable $th) {
+                        DB::rollBack();
+                        Notification::make()
+                            ->title('Error')
+                            ->body($th->getMessage())
+                            ->danger()
+                            ->send();
+                    }
 
                 }),
             ])
@@ -126,7 +219,19 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
                 // ...
             ])
             ->recordActions([
-                // ...
+
+                Action::make('advance')
+                    ->label('View Rooms')
+                    ->modalSubmitAction(false)
+                    ->modalCancelAction(fn ($action) => $action->label('Close'))
+                    ->disabledForm()
+                    ->modalContent(fn ($record): View => view(
+                        'filament.resources.examinations.pages.examination-slot-rooms',
+                        ['record' => $record],
+                    ))
+                    ->modalWidth(Width::SevenExtraLarge),
+
+                DeleteAction::make(),
             ])
             ->toolbarActions([
                 // ...

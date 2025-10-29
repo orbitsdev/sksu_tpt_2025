@@ -19,13 +19,13 @@ class ExaminationForm
                     ->required(),
                 DatePicker::make('end_date')
                     ->required(),
-                    TextInput::make('total_slots')
-    ->label('Total Slots')
-    ->numeric()
-    ->minValue(0)
-    ->required()
-    ->default(0)
-    ->helperText('Total number of available slots for examinees.'),
+    //                 TextInput::make('total_slots')
+    // ->label('Total Slots')
+    // ->numeric()
+    // ->minValue(0)
+    // ->required()
+    // ->default(0)
+    // ->helperText('Total number of available slots for examinees.'),
 
                 TextInput::make('venue'),
                 Toggle::make('is_published')

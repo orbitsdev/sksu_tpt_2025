@@ -19,6 +19,8 @@ use Filament\Tables\Table;
 
 class ExaminationResource extends Resource
 {
+
+    
         public static function getNavigationSort(): ?int
 {
     return 4;

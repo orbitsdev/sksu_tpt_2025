@@ -26,8 +26,8 @@ class AdminPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $panel
-         ->resourceCreatePageRedirect('index')
-         ->resourceEditPageRedirect('index')
+        //  ->resourceCreatePageRedirect('index')
+        //  ->resourceEditPageRedirect('index')
 
             ->default()
             ->id('admin')
@@ -62,10 +62,10 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            ->sidebarFullyCollapsibleOnDesktop(true)
+            // ->sidebarFullyCollapsibleOnDesktop(true)
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->maxContentWidth(Width::SevenExtraLarge)
-
+                
             ;
     }
 }
