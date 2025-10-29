@@ -9,16 +9,18 @@ use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Actions\ActionGroup;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Illuminate\Support\HtmlString;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\ToggleColumn;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\ValidationException;
+
 class ExaminationsTable
 {
     public static function configure(Table $table): Table
@@ -27,8 +29,30 @@ class ExaminationsTable
             ->columns([
                 TextColumn::make('title')
                     ->searchable(),
-                        TextColumn::make('total_slots')
-                    ->sortable(),
+                    //     TextColumn::make('total_slots')
+                    // ->sortable(),
+        TextColumn::make('examination_slots')
+    ->label('Campuses & Slots')
+    ->html()
+    ->getStateUsing(function ($record) {
+        $slots = $record->examinationSlots()
+            ->with('campus')
+            ->get(['campus_id', 'slots', 'is_active']);
+
+        if ($slots->isEmpty()) {
+            return '';
+        }
+
+        // Create a simple line-separated list (no bullets)
+        $list = $slots->map(function ($slot) {
+            $campusName = e(optional($slot->campus)->name ?? 'Unknown Campus');
+            $slotsCount = e($slot->slots);
+            return "{$campusName} — <strong>{$slotsCount}</strong>";
+        })->implode('<br>'); // 👈 line break instead of bullets
+
+        return new HtmlString($list);
+    })
+    ->toggleable(),
                 TextColumn::make('start_date')
                     ->date()
                     ->sortable(),
@@ -112,7 +136,7 @@ class ExaminationsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-          
+
             ->filters([
                 //
             ])
