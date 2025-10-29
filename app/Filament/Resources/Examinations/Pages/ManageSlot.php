@@ -85,16 +85,18 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
                     ->label('Exam Date')
                     ->date(),
 
+                     TextColumn::make('total_capacity')
+                    ->label('Total Capacity')
+                    ->alignCenter()
+
+                    ->getStateUsing(fn ($record) => $record->rooms->sum('capacity')),
+
                 TextColumn::make('number_of_rooms')
                     ->label('# Rooms')
                     ->alignCenter(),
 
                 // 🧮 Total capacity (sum of room capacities)
-                TextColumn::make('total_capacity')
-                    ->label('Total Capacity')
-                    ->alignCenter()
 
-                    ->getStateUsing(fn ($record) => $record->rooms->sum('capacity')),
 
                 // 👥 Occupied seats (sum of room.occupied)
                 TextColumn::make('occupied')
@@ -143,6 +145,12 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
                         ->required()
                         ->minDate(now()),
 
+                    TextInput::make('slots')
+                        ->numeric()
+                        ->label('Total Slots')
+                        ->required()
+                        ->minValue(1)
+                        ->helperText('Total examinees that can be accommodated.'),
                     TextInput::make('number_of_rooms')
                         ->numeric()
                         ->label('Number of Rooms')
@@ -150,12 +158,6 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
                         ->minValue(1)
                         ->helperText('Number of physical rooms available.'),
 
-                    TextInput::make('slots')
-                        ->numeric()
-                        ->label('Total Slots')
-                        ->required()
-                        ->minValue(1)
-                        ->helperText('Total examinees that can be accommodated.'),
 
                     Toggle::make('is_active')
                         ->label('Active')
