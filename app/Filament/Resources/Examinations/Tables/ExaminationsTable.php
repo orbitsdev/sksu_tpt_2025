@@ -94,8 +94,8 @@ class ExaminationsTable
                 ,
                 IconColumn::make('is_application_open')
                     ->boolean()
-                    ->label('Application Open')
-
+                    ->label('Application Open'),
+     CapacitySummary::make('capacity_summary')->label('Capacity Overview'),
                 // ->afterStateUpdated(function ($record, bool $state) {
                 //     if ($state) {
                 //         Notification::make()
@@ -111,7 +111,7 @@ class ExaminationsTable
                 //             ->send();
                 //     }
                 // })
-                ,
+
 
                 TextColumn::make('school_year')
                     ->searchable()
@@ -128,7 +128,7 @@ class ExaminationsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                    // CapacitySummary::make('capacity_summary')->label('Capacity Overview'),
+
             ])
 
             ->filters([

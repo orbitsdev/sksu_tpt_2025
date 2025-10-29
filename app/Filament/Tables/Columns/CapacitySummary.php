@@ -8,11 +8,14 @@ class CapacitySummary extends Column
 {
     protected string $view = 'filament.tables.columns.capacity-summary';
 
-     public function getCapacityData(): array
+    public function getCapacityData(): array
     {
         $record = $this->getRecord();
-        $capacity = $record->total_capacity ?? 0;
-        $occupied = $record->total_occupied ?? 0;
+
+        // ✅ Compute totals dynamically from relationships
+        $capacity = $record->examinationSlots?->flatMap(fn ($slot) => $slot->rooms)->sum('capacity') ?? 0;
+        $occupied = $record->examinationSlots?->flatMap(fn ($slot) => $slot->rooms)->sum('occupied') ?? 0;
+
         $left = max($capacity - $occupied, 0);
         $percent = $capacity > 0 ? round(($occupied / $capacity) * 100) : 0;
 
