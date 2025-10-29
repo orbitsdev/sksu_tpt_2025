@@ -11,6 +11,7 @@ use Filament\Actions\ViewAction;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -39,60 +40,68 @@ class ExaminationsTable
 
 
 
-                    ToggleColumn::make('is_published')
+                    IconColumn::make('is_published')
     ->label('Published')
-    ->beforeStateUpdated(function ($record, bool $state) {
-        if ($state) {
-            $alreadyPublished = \App\Models\Examination::where('is_published', true)
-                ->where('id', '!=', $record->id)
-                ->exists();
+    ->boolean()
+    // ->beforeStateUpdated(function ($record, bool $state) {
+    //     if ($state) {
+    //         $alreadyPublished = \App\Models\Examination::where('is_published', true)
+    //             ->where('id', '!=', $record->id)
+    //             ->exists();
 
-            if ($alreadyPublished) {
-                Notification::make()
-                    ->title('Cannot publish examination')
-                    ->body('Only one examination can be published at a time. Please unpublish the other one first.')
-                    ->danger()
-                    ->send();
+    //         if ($alreadyPublished) {
+    //             Notification::make()
+    //                 ->title('Cannot publish examination')
+    //                 ->body('Only one examination can be published at a time. Please unpublish the other one first.')
+    //                 ->danger()
+    //                 ->send();
 
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'is_published' => 'Another examination is already published. Unpublish it first.',
-                ]);
-            }
-        }
-    })
-    ->afterStateUpdated(function ($record, bool $state) {
-        Notification::make()
-            ->title('Examination updated')
-            ->body($state
-                ? 'This examination is now published.'
-                : 'This examination has been unpublished.')
-            ->success()
-            ->send();
-    }),
-              ToggleColumn::make('is_application_open')
+    //             throw \Illuminate\Validation\ValidationException::withMessages([
+    //                 'is_published' => 'Another examination is already published. Unpublish it first.',
+    //             ]);
+    //         }
+    //     }
+    // })
+    // // ->afterStateUpdated(function ($record, bool $state) {
+    // //     Notification::make()
+    // //         ->title('Examination updated')
+    // //         ->body($state
+    // //             ? 'This examination is now published.'
+    // //             : 'This examination has been unpublished.')
+    // //         ->success()
+    // //         ->send();
+    // // })
+    ,
+              IconColumn::make('is_application_open')
+              ->boolean()
     ->label('Application Open')
 
-    ->afterStateUpdated(function ($record, bool $state) {
-        if ($state) {
-            Notification::make()
-                ->title('Application Period Opened')
-                ->body('Applicants can now submit their applications for this examination.')
-                ->success()
-                ->send();
-        } else {
-            Notification::make()
-                ->title('Application Period Closed')
-                ->body('Applications for this examination have been closed.')
-                ->warning()
-                ->send();
-        }
-    }),
+    // ->afterStateUpdated(function ($record, bool $state) {
+    //     if ($state) {
+    //         Notification::make()
+    //             ->title('Application Period Opened')
+    //             ->body('Applicants can now submit their applications for this examination.')
+    //             ->success()
+    //             ->send();
+    //     } else {
+    //         Notification::make()
+    //             ->title('Application Period Closed')
+    //             ->body('Applications for this examination have been closed.')
+    //             ->warning()
+    //             ->send();
+    //     }
+    // })
+    ,
 
 
                 TextColumn::make('school_year')
-                    ->searchable(),
+                    ->searchable()
+                       ->toggleable(isToggledHiddenByDefault: true)
+                    ,
                 TextColumn::make('type')
-                    ->searchable(),
+                    ->searchable()
+                       ->toggleable(isToggledHiddenByDefault: true)
+                    ,
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -103,12 +112,19 @@ class ExaminationsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+          
             ->filters([
                 //
             ])
             ->recordActions([
                    ViewAction::make(),
                 ActionGroup::make([
+                    Action::make('edit')
+    ->label('Manage Slots')
+    ->icon('heroicon-s-pencil')
+    ->url(function (Examination $record): string { return
+    route('filament.admin.resources.examinations.manage-slot', ['record' => $record]);}
+    ), // route('filament.resources.examinations.edit', ['record' => $record]))),
                    EditAction::make(),
                       DeleteAction::make(),
                 ])

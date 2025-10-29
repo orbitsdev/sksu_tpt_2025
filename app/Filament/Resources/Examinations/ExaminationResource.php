@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Examinations;
 use App\Filament\Resources\Examinations\Pages\CreateExamination;
 use App\Filament\Resources\Examinations\Pages\EditExamination;
 use App\Filament\Resources\Examinations\Pages\ListExaminations;
+use App\Filament\Resources\Examinations\Pages\ManageExaminationSlot;
 use App\Filament\Resources\Examinations\Pages\ViewExamination;
 use App\Filament\Resources\Examinations\Schemas\ExaminationForm;
 use App\Filament\Resources\Examinations\Schemas\ExaminationInfolist;
@@ -57,6 +58,8 @@ class ExaminationResource extends Resource
             'create' => CreateExamination::route('/create'),
             'view' => ViewExamination::route('/{record}'),
             'edit' => EditExamination::route('/{record}/edit'),
+            'manage-slot' => Pages\ManageSlot::route('/{record}/manage-slot'),
+
         ];
     }
 }
