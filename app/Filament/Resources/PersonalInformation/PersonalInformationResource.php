@@ -15,9 +15,12 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-
+    use UnitEnum;
 class PersonalInformationResource extends Resource
 {
+
+
+protected static string | UnitEnum | null $navigationGroup = 'Management';
     protected static ?string $model = PersonalInformation::class;
 protected static ?string $modelLabel = 'Student Information';
 protected static ?string $pluralModelLabel = 'Student Records';
