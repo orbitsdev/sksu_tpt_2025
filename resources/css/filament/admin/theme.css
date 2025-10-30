@@ -7,3 +7,11 @@
 /* .fi-sidebar{
     @apply bg-[#FDFDFC]  shadow;
 }; */
+.fi-simple-main-ctn {
+  @apply relative bg-cover bg-center bg-no-repeat;
+  background-image:
+    linear-gradient(rgba(0,128,0,0.6), rgba(0,77,0,0.6)),
+    url('../../../../public/images/access_campus.jpg'); /* ✅ works with Vite build */
+}
+
+
