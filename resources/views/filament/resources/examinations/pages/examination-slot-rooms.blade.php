@@ -8,7 +8,9 @@
                 {{ $record->examination->title ?? 'Unknown Exam' }}
             </h2>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-                Campus: <strong>{{ $record->campus->name ?? 'N/A' }}</strong><br>
+
+                Campus: <strong>{{ $record->testCenter->campus->name ?? 'N/A' }}</strong><br>
+                Test Center: <strong>{{ $record->testCenter->name ?? 'N/A' }}</strong><br>
                 Building: <strong>{{ $record->building_name ?? 'N/A' }}</strong><br>
                 Date: <strong>{{ \Carbon\Carbon::parse($record->date_of_exam)->format('F d, Y') }}</strong>
             </p>
