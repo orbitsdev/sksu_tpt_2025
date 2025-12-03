@@ -52,6 +52,7 @@ TextInput::make('abbreviation')
     ->mask(RawJs::make(<<<'JS'
         $input.toUpperCase().replace(/[^A-Z0-9]/g, '')
     JS))
+
     ->stripCharacters([' '])
     ->maxLength(10),
 

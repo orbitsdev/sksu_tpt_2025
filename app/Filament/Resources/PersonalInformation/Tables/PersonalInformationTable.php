@@ -11,14 +11,14 @@ use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+
 class PersonalInformationTable
 {
     public static function configure(Table $table): Table
     {
         return $table
-         ->modifyQueryUsing(fn (Builder $query) =>
-         $query->whereHas('user', fn(Builder $query) => $query->whereHas('roles', fn(Builder $query) => $query->where('name', 'student')))->latest())
-         ->striped()
+            ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('user', fn (Builder $query) => $query->whereHas('roles', fn (Builder $query) => $query->where('name', 'student')))->latest())
+            ->striped()
             ->columns([
                 TextColumn::make('user.email')->searchable(),
                 TextColumn::make('first_name')
@@ -80,7 +80,6 @@ class PersonalInformationTable
                     EditAction::make(),
                     DeleteAction::make(),
                 ]),
-
 
             ])
             ->toolbarActions([
