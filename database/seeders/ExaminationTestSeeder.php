@@ -2,15 +2,14 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Application;
-use App\Models\Examination;
 use App\Models\ApplicationSlot;
+use App\Models\Examination;
 use App\Models\ExaminationSlot;
-
+use App\Models\TestCenter;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class ExaminationTestSeeder extends Seeder
 {
@@ -19,14 +18,13 @@ class ExaminationTestSeeder extends Seeder
      */
     public function run(): void
     {
-       DB::transaction(function () {
+        DB::transaction(function () {
 
             // 🧩 1️⃣ Create a sample examination
             $exam = Examination::create([
                 'title' => 'SKSU College Entrance Examination 2025',
                 'start_date' => now()->addDays(7),
                 'end_date' => now()->addDays(10),
-                'venue' => 'SKSU Main Campus',
                 'school_year' => '2025-2026',
                 'type' => 'College Admission',
                 'is_published' => true,
@@ -34,10 +32,27 @@ class ExaminationTestSeeder extends Seeder
                 'show_result' => false,
             ]);
 
-            // 🏫 2️⃣ Create sample slots for two campuses
+            // 🏢 2️⃣ Create test centers for this examination
+            $testCenter1 = TestCenter::create([
+                'examination_id' => $exam->id,
+                'campus_id' => 1, // Main Campus
+                'name' => 'Main Campus Testing Center',
+                'address' => 'Main Campus Building A',
+                'is_active' => true,
+            ]);
+
+            $testCenter2 = TestCenter::create([
+                'examination_id' => $exam->id,
+                'campus_id' => 2, // Access Campus
+                'name' => 'Access Campus Testing Center',
+                'address' => 'Access Campus Building B',
+                'is_active' => true,
+            ]);
+
+            // 🏫 3️⃣ Create examination slots for test centers
             $slotDataList = [
                 [
-                    'campus_id' => 1,
+                    'test_center_id' => $testCenter1->id,
                     'building_name' => 'Main Building A',
                     'date_of_exam' => now()->addDays(7),
                     'slots' => 100,
@@ -45,7 +60,7 @@ class ExaminationTestSeeder extends Seeder
                     'is_active' => true,
                 ],
                 [
-                    'campus_id' => 2,
+                    'test_center_id' => $testCenter2->id,
                     'building_name' => 'ACCESS Center',
                     'date_of_exam' => now()->addDays(8),
                     'slots' => 120,
@@ -64,7 +79,7 @@ class ExaminationTestSeeder extends Seeder
                 for ($i = 1; $i <= $slotData['number_of_rooms']; $i++) {
                     $capacity = $capacityPerRoom + ($i === 1 ? $remainder : 0);
                     $slot->rooms()->create([
-                        'room_number' => 'Room ' . $i,
+                        'room_number' => 'Room '.$i,
                         'capacity' => $capacity,
                         'occupied' => 0,
                     ]);
@@ -74,14 +89,14 @@ class ExaminationTestSeeder extends Seeder
             // ✅ Reload slots & rooms after they’re created
             $allSlots = ExaminationSlot::with('rooms')->get();
 
-            // 🎓 3️⃣ Use the existing applicant user
+            // 🎓 4️⃣ Use the existing applicant user
             $applicant = User::where('email', 'applicant@gmail.com')->first();
 
             if (! $applicant) {
                 throw new \Exception('⚠️ applicant@gmail.com user not found. Please run DefaultAccountSeeder first.');
             }
 
-            // 👩‍🎓 4️⃣ Create 10 dummy applications for the applicant
+            // 👩‍🎓 5️⃣ Create 10 dummy applications for the applicant
             for ($i = 1; $i <= 10; $i++) {
                 $application = Application::create([
                     'examination_id' => $exam->id,

@@ -2,21 +2,22 @@
 
 namespace App\Filament\Resources\Examinations\Tables;
 
-use Filament\Tables\Table;
+use App\Filament\Tables\Columns\CapacitySummary;
 use App\Models\Examination;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Actions\ActionGroup;
-use Filament\Actions\DeleteAction;
-use Illuminate\Support\HtmlString;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
+use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Notifications\Notification;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Tables\Columns\CapacitySummary;
+use Illuminate\Support\HtmlString;
 
 class ExaminationsTable
 {
@@ -95,7 +96,7 @@ class ExaminationsTable
                 IconColumn::make('is_application_open')
                     ->boolean()
                     ->label('Application Open'),
-     CapacitySummary::make('capacity_summary')->label('Capacity Overview'),
+                CapacitySummary::make('capacity_summary')->label('Capacity Overview'),
                 // ->afterStateUpdated(function ($record, bool $state) {
                 //     if ($state) {
                 //         Notification::make()
@@ -112,7 +113,6 @@ class ExaminationsTable
                 //     }
                 // })
 
-
                 TextColumn::make('school_year')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -128,24 +128,59 @@ class ExaminationsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-
             ])
 
             ->filters([
                 //
             ])
             ->recordActions([
-                   Action::make('edit')
-                   ->button()
-                        ->label('Manage Slots')
-                        // ->icon('heroicon-s-pencil')
-                        ->url(function (Examination $record): string {
-                            return route('filament.admin.resources.examinations.manage-slot', ['record' => $record]);
-                        }
-                        ), // route('filament.resources.examinations.edit', ['record' => $record]))),
+                Action::make('manage_slots')
+                    ->button()
+                    ->label('Manage Slots')
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->url(function (Examination $record): string {
+                        return route('filament.admin.resources.examinations.manage-slot', ['record' => $record]);
+                    }),
+
+                Action::make('settings')
+                    ->button()
+                    ->label('Settings')
+                    ->icon('heroicon-o-adjustments-horizontal')
+                    ->color('gray')
+                    ->disabled(fn (Examination $record): bool => $record->examinationSlots()->doesntExist())
+                    ->tooltip(fn (Examination $record): ?string =>
+                        $record->examinationSlots()->doesntExist()
+                            ? 'Add examination slots first'
+                            : null
+                    )
+                    ->form([
+                        Toggle::make('is_published')
+                            ->label('Published')
+                            ->helperText('Make exam visible to students')
+                            ->required()
+                            ->inline(false),
+
+                        Toggle::make('is_application_open')
+                            ->label('Application Open')
+                            ->helperText('Allow students to submit applications')
+                            ->required()
+                            ->inline(false),
+                    ])
+                    ->fillForm(fn (Examination $record): array => [
+                        'is_published' => $record->is_published,
+                        'is_application_open' => $record->is_application_open,
+                    ])
+                    ->action(function (Examination $record, array $data): void {
+                        $record->update($data);
+
+                        Notification::make()
+                            ->title('Settings updated successfully')
+                            ->success()
+                            ->send();
+                    }),
+
                 ActionGroup::make([
                     ViewAction::make(),
-
                     EditAction::make(),
                     DeleteAction::make(),
                 ]),
@@ -156,14 +191,12 @@ class ExaminationsTable
                     DeleteBulkAction::make(),
                 ]),
             ])
-              ->striped()
-           ->modifyQueryUsing(function (Builder $query) {
-
-    $query->with(['examination_slots.rooms'])
-        // ->withSum('examination_slots.rooms as total_capacity', 'capacity')
-        // ->withSum('examination_slots.rooms as total_occupied', 'occupied')
-        ->latest();
-});
-}
-
+            ->striped()
+            ->modifyQueryUsing(function (Builder $query) {
+                $query->with(['examinationSlots.rooms'])
+                    // ->withSum('examination_slots.rooms as total_capacity', 'capacity')
+                    // ->withSum('examination_slots.rooms as total_occupied', 'occupied')
+                    ->latest();
+            });
+    }
 }

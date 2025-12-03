@@ -31,6 +31,8 @@ protected static string | UnitEnum | null $navigationGroup = 'Management';
 
     protected static ?string $recordTitleAttribute = 'Examination';
 
+    protected static bool $canCreateAnother = false;
+
     public static function form(Schema $schema): Schema
     {
         return ExaminationForm::configure($schema);

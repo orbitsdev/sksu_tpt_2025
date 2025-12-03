@@ -5,6 +5,7 @@ use App\Models\ApplicationSlot;
 use App\Models\Campus;
 use App\Models\Examination;
 use App\Models\ExaminationRoom;
+use App\Models\TestCenter;
 
 trait ExaminationSlotRelations {
       public function examination()
@@ -12,9 +13,9 @@ trait ExaminationSlotRelations {
         return $this->belongsTo(Examination::class);
     }
 
-    public function campus()
+    public function testCenter()
     {
-        return $this->belongsTo(Campus::class);
+        return $this->belongsTo(TestCenter::class);
     }
 
     public function rooms()

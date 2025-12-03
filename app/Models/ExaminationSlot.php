@@ -2,11 +2,27 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Traits\Models\ExaminationSlotRelations;
+use Illuminate\Database\Eloquent\Model;
+
 class ExaminationSlot extends Model
 {
-  use ExaminationSlotRelations;
+    use ExaminationSlotRelations;
+
+    protected $fillable = [
+        'examination_id',
+        'test_center_id',
+        'building_name',
+        'date_of_exam',
+        'slots',
+        'number_of_rooms',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'date_of_exam' => 'date',
+        'is_active' => 'boolean',
+    ];
 
     // helpers
     public function getTotalCapacityAttribute()

@@ -1,19 +1,19 @@
 <?php
+
 namespace App\Traits\Models;
 
 use App\Models\Application;
 use App\Models\ExaminationSlot;
 
-
-trait ExaminationRelations {
-     public function application(){
+trait ExaminationRelations
+{
+    public function application()
+    {
         return $this->hasMany(Application::class);
     }
 
-    public function examinationSlots(){
-        return $this->hasMany(ExaminationSlot::class);
-    }
-    public function examination_slots(){
+    public function examinationSlots()
+    {
         return $this->hasMany(ExaminationSlot::class);
     }
 }

@@ -14,6 +14,7 @@ use Database\Seeders\ExaminationSeeder;
 use Database\Seeders\DefaultAccountSeeder;
 use Database\Seeders\ExaminationTestSeeder;
 use Database\Seeders\PersonalInformationSeeder;
+use Database\Seeders\TestCenterSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -28,8 +29,9 @@ class DatabaseSeeder extends Seeder
             PersonalInformationSeeder::class,
             CampusSeeder::class,
             ProgramSeeder::class,
-               ExaminationSeeder::class,
-               ExaminationTestSeeder::class
+            ExaminationSeeder::class,
+            TestCenterSeeder::class,
+            ExaminationTestSeeder::class
 
         ]);
     }

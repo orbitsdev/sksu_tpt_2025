@@ -3,8 +3,9 @@
 namespace App\Filament\Resources\Examinations\Schemas;
 
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
 class ExaminationForm
@@ -14,26 +15,49 @@ class ExaminationForm
         return $schema
             ->components([
                 TextInput::make('title')
-                    ->required(),
-                DatePicker::make('start_date')
-                    ->required(),
-                DatePicker::make('end_date')
-                    ->required(),
-    //                 TextInput::make('total_slots')
-    // ->label('Total Slots')
-    // ->numeric()
-    // ->minValue(0)
-    // ->required()
-    // ->default(0)
-    // ->helperText('Total number of available slots for examinees.'),
+                    ->label('Title')
+                    ->required()
+                    ->columnSpanFull()
+                    ->maxLength(255)
+                    ->placeholder('e.g., First Semester Entrance Exam 2025'),
 
-                TextInput::make('venue'),
-                Toggle::make('is_published')
-                    ->required(),
-                Toggle::make('is_application_open')
-                    ->required(),
-                TextInput::make('school_year'),
-                TextInput::make('type'),
-            ]);
+                Select::make('type')
+                    ->label('Type')
+                    ->options([
+                        'Entrance' => 'Entrance',
+                        'Midterm' => 'Midterm',
+                        'Final' => 'Final',
+                    ])
+                    ->default('Entrance')
+                    ->required()
+                    ->native(false),
+
+                TextInput::make('school_year')
+                    ->label('School Year')
+                    ->mask('9999-9999')
+                    ->placeholder('YYYY-YYYY')
+                    ->default(date('Y') . '-' . (date('Y') + 1))
+                    ->required()
+                    ->maxLength(9),
+
+                DatePicker::make('start_date')
+                    ->label('Start Date')
+                    ->required()
+                    ->minDate(today())
+                    ->native(false)
+                    ->displayFormat('M d, Y')
+                    ->placeholder('Select start date')
+                    ->live(),
+
+                DatePicker::make('end_date')
+                    ->label('End Date')
+                    ->required()
+                    ->minDate(fn (Get $get) => $get('start_date') ?: today())
+                    ->afterOrEqual('start_date')
+                    ->native(false)
+                    ->displayFormat('M d, Y')
+                    ->placeholder('Select end date'),
+            ])
+            ->columns(2);
     }
 }
