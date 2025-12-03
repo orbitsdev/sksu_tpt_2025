@@ -279,7 +279,7 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
                                                 ->inline(false)
                                                 ->helperText('When active, students can apply for this examination slot'),
 
-                                            
+
                                 ]),
                         ])
                             ->skippable(false),
@@ -353,6 +353,7 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
 
                     Action::make('advance')
                         ->label('View Rooms')
+                        ->button()
                         ->modalSubmitAction(false)
                         ->modalCancelAction(fn ($action) => $action->label('Close'))
                         ->disabledForm()
