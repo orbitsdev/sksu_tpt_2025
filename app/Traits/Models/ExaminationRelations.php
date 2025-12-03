@@ -7,7 +7,7 @@ use App\Models\ExaminationSlot;
 
 trait ExaminationRelations
 {
-    public function application()
+    public function applications()
     {
         return $this->hasMany(Application::class);
     }

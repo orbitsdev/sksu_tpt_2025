@@ -3,7 +3,12 @@
     "allow": [
       "Bash(rm:*)",
       "Bash(php artisan:*)",
-      "Bash(php -r:*)"
+      "Bash(php -r:*)",
+      "Bash(find:*)",
+      "Bash(xargs:*)",
+      "Bash(mysql:*)",
+      "Bash(herd php artisan tinker:*)",
+      "Bash(herd php artisan:*)"
     ],
     "deny": [],
     "ask": []

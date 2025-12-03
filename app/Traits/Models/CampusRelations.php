@@ -11,6 +11,6 @@ trait CampusRelations {
     }
 
     public function testCenters(){
-        return $this->belongToMany(TestCenter::class);
+        return $this->hasMany(TestCenter::class);
     }
 }

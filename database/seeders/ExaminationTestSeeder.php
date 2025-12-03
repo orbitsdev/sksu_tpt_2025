@@ -32,22 +32,24 @@ class ExaminationTestSeeder extends Seeder
                 'show_result' => false,
             ]);
 
-            // 🏢 2️⃣ Create test centers for this examination
-            $testCenter1 = TestCenter::create([
-                'examination_id' => $exam->id,
-                'campus_id' => 1, // Main Campus
-                'name' => 'Main Campus Testing Center',
-                'address' => 'Main Campus Building A',
-                'is_active' => true,
-            ]);
+            // 🏢 2️⃣ Use existing test centers (or create if needed)
+            $testCenter1 = TestCenter::firstOrCreate(
+                ['name' => 'Main Campus Testing Center'],
+                [
+                    'campus_id' => 1,
+                    'address' => 'Main Campus Building A',
+                    'is_active' => true,
+                ]
+            );
 
-            $testCenter2 = TestCenter::create([
-                'examination_id' => $exam->id,
-                'campus_id' => 2, // Access Campus
-                'name' => 'Access Campus Testing Center',
-                'address' => 'Access Campus Building B',
-                'is_active' => true,
-            ]);
+            $testCenter2 = TestCenter::firstOrCreate(
+                ['name' => 'Access Campus Testing Center'],
+                [
+                    'campus_id' => 2,
+                    'address' => 'Access Campus Building B',
+                    'is_active' => true,
+                ]
+            );
 
             // 🏫 3️⃣ Create examination slots for test centers
             $slotDataList = [
@@ -55,7 +57,7 @@ class ExaminationTestSeeder extends Seeder
                     'test_center_id' => $testCenter1->id,
                     'building_name' => 'Main Building A',
                     'date_of_exam' => now()->addDays(7),
-                    'slots' => 100,
+                    'total_examinees' => 100,
                     'number_of_rooms' => 4,
                     'is_active' => true,
                 ],
@@ -63,7 +65,7 @@ class ExaminationTestSeeder extends Seeder
                     'test_center_id' => $testCenter2->id,
                     'building_name' => 'ACCESS Center',
                     'date_of_exam' => now()->addDays(8),
-                    'slots' => 120,
+                    'total_examinees' => 120,
                     'number_of_rooms' => 5,
                     'is_active' => true,
                 ],
@@ -72,16 +74,10 @@ class ExaminationTestSeeder extends Seeder
             foreach ($slotDataList as $slotData) {
                 $slot = $exam->examinationSlots()->create($slotData);
 
-                // 🪑 Auto-generate rooms per slot
-                $capacityPerRoom = floor($slotData['slots'] / $slotData['number_of_rooms']);
-                $remainder = $slotData['slots'] % $slotData['number_of_rooms'];
-
+                // 🪑 Auto-generate rooms per slot (capacity is now computed)
                 for ($i = 1; $i <= $slotData['number_of_rooms']; $i++) {
-                    $capacity = $capacityPerRoom + ($i === 1 ? $remainder : 0);
                     $slot->rooms()->create([
                         'room_number' => 'Room '.$i,
-                        'capacity' => $capacity,
-                        'occupied' => 0,
                     ]);
                 }
             }
@@ -110,18 +106,16 @@ class ExaminationTestSeeder extends Seeder
 
                 // 🎯 Assign to random slot & room
                 $randomSlot = $allSlots->random();
-                $randomRoom = $randomSlot->rooms->where('occupied', '<', 'capacity')->random();
+                $availableRooms = $randomSlot->rooms->filter(fn($room) => !$room->isFull());
 
-                if ($randomRoom) {
-                    $randomRoom->update([
-                        'occupied' => min($randomRoom->occupied + 1, $randomRoom->capacity),
-                    ]);
+                if ($availableRooms->isNotEmpty()) {
+                    $randomRoom = $availableRooms->random();
 
                     ApplicationSlot::create([
                         'application_id' => $application->id,
                         'examination_slot_id' => $randomSlot->id,
                         'examination_room_id' => $randomRoom->id,
-                        'seat_number' => $randomRoom->occupied,
+                        'seat_number' => $randomRoom->occupied + 1,
                     ]);
                 }
             }

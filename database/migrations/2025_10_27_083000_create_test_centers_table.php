@@ -13,12 +13,14 @@ return new class extends Migration
     {
         Schema::create('test_centers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('examination_id')->constrained()->onDelete('cascade');
             $table->foreignId('campus_id')->constrained()->onDelete('cascade');
             $table->string('name')->comment('Name of the test center');
             $table->text('address')->nullable()->comment('Address of the test center');
             $table->boolean('is_active')->default(true)->comment('Whether the test center is active');
             $table->timestamps();
+
+            // Indexes for performance
+            $table->index('is_active');
         });
     }
 

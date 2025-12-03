@@ -14,7 +14,7 @@ class ExaminationSlot extends Model
         'test_center_id',
         'building_name',
         'date_of_exam',
-        'slots',
+        'total_examinees',
         'number_of_rooms',
         'is_active',
     ];

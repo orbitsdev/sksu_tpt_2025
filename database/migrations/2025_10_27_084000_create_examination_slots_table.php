@@ -17,10 +17,15 @@ return new class extends Migration
             $table->foreignId('test_center_id')->constrained()->onDelete('cascade');
             $table->string('building_name')->nullable();
             $table->date('date_of_exam');
-            $table->unsignedBigInteger('slots')->default(0)->comment('Total available slots for examinees');
+            $table->unsignedBigInteger('total_examinees')->default(0)->comment('Total examinees for this slot');
             $table->unsignedBigInteger('number_of_rooms')->default(0)->comment('Total available rooms for examinees');
             $table->boolean('is_active')->default(true)->comment('Indicates if the slot is active');
             $table->timestamps();
+
+            // Indexes for performance
+            $table->index('date_of_exam');
+            $table->index('is_active');
+            $table->index(['examination_id', 'date_of_exam']); // Composite index for common queries
         });
     }
 

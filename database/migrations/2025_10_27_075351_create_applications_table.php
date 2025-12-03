@@ -23,6 +23,11 @@ return new class extends Migration
             $table->string('status')->nullable();
 
             $table->timestamps();
+
+            // Indexes for performance
+            $table->index('status');
+            $table->index('exam_number');
+            $table->index(['examination_id', 'status']); // Composite index for common queries
         });
     }
 

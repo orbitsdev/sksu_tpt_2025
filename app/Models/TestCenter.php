@@ -10,7 +10,6 @@ class TestCenter extends Model
     use TestCenterRelations;
 
     protected $fillable = [
-        'examination_id',
         'campus_id',
         'name',
         'address',

@@ -24,6 +24,11 @@ return new class extends Migration
             $table->string('school_year')->nullable()->comment('Academic year, e.g. 2025-2026');
             $table->string('type')->nullable()->comment('Exam type, e.g. Entrance, Midterm, Final');
             $table->timestamps();
+
+            // Indexes for performance
+            $table->index('school_year');
+            $table->index('type');
+            $table->index('is_published');
         });
     }
 

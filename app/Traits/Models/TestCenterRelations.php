@@ -2,18 +2,17 @@
 namespace App\Traits\Models;
 
 use App\Models\Campus;
-use App\Models\Examination;
+use App\Models\ExaminationSlot;
 
 trait TestCenterRelations
 {
-
     public function campus()
     {
         return $this->belongsTo(Campus::class);
     }
 
-    public function examination()
+    public function examinationSlots()
     {
-        return $this->belongsTo(Examination::class);
+        return $this->hasMany(ExaminationSlot::class);
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Examinations\Pages;
 
 use App\Filament\Resources\Examinations\ExaminationResource;
-use App\Models\Campus;
 use App\Models\ExaminationRoom;
 use App\Models\ExaminationSlot;
 use App\Models\TestCenter;
@@ -15,13 +14,13 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Tabs;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Wizard;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Support\Enums\Width;
@@ -33,6 +32,7 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\HtmlString;
 
 class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
 {
@@ -97,7 +97,7 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
                     ->date('M d, Y')
                     ->sortable(),
 
-                     TextColumn::make('total_capacity')
+                TextColumn::make('total_capacity')
                     ->label('Total Capacity')
                     ->alignCenter()
 
@@ -108,7 +108,6 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
                     ->alignCenter(),
 
                 // 🧮 Total capacity (sum of room capacities)
-
 
                 // 👥 Occupied seats (sum of room.occupied)
                 TextColumn::make('occupied')
@@ -128,7 +127,7 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
                         $remaining = max($capacity - $occupied, 0);
                         $color = $remaining > 0 ? 'green' : 'red';
 
-                        return new \Illuminate\Support\HtmlString("<strong style='color:{$color}'>{$remaining}</strong>");
+                        return new HtmlString("<strong style='color:{$color}'>{$remaining}</strong>");
                     }),
 
                 ToggleColumn::make('is_active')
@@ -139,235 +138,231 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
 
                 Action::make('Create Slot')
                     ->icon('heroicon-o-plus-circle')
-                    ->modalWidth('7xl')
+                    ->modalWidth('4xl')
                     ->modalHeading('Create Examination Slot')
-                    ->modalDescription('Configure examination slot details, schedule, and room allocation')
+                    ->modalDescription('Follow the steps to configure your examination slot')
+                    ->modalSubmitActionLabel('Create Slot')
                     ->schema([
-                        Tabs::make('Tabs')
-                            ->tabs([
-                                // Tab 1: Location & Venue
-                                Tabs\Tab::make('Location & Venue')
-                                    ->icon('heroicon-o-map-pin')
-                                    ->schema([
-                                        Select::make('test_center_id')
-                                            ->label('Test Center')
-                                            ->options(function () {
-                                                $testCenters = TestCenter::query()
-                                                    ->where('examination_id', $this->record->id)
-                                                    ->where('is_active', true)
-                                                    ->with('campus')
-                                                    ->get();
+                        Wizard::make([
+                            // Step 1: Location & Venue
+                            Wizard\Step::make('Location & Venue')
+                                ->icon('heroicon-o-map-pin')
+                                ->description('Select test center and building')
+                                ->schema([
+                                   Select::make('test_center_id')
+                                                ->label('Test Center')
+                                                ->options(function () {
+                                                    // Get ALL active test centers
+                                                    return TestCenter::query()
+                                                        ->where('is_active', true)
+                                                        ->with('campus')
+                                                        ->get()
+                                                        ->mapWithKeys(function ($testCenter) {
+                                                            return [$testCenter->id => "{$testCenter->name} ({$testCenter->campus->name})"];
+                                                        })
+                                                        ->toArray();
+                                                })
+                                                ->searchable()
+                                                ->required()
+                                                ->native(false)
+                                                ->helperText('Select any active test center for this examination slot')
+                                                ->live(),
 
-                                                // Debug: Log the test centers found
-                                                \Log::info('Test Centers found for examination ' . $this->record->id . ': ' . $testCenters->count());
+                                            TextInput::make('building_name')
+                                                ->label('Building Name')
+                                                ->required()
+                                                ->maxLength(255)
+                                                ->placeholder('e.g., Science Building, Main Campus Building A')
+                                                ->helperText('Specify the building where the examination will be held'),
+                                ]),
 
-                                                if ($testCenters->isEmpty()) {
-                                                    return ['_debug' => 'No test centers found for this examination'];
-                                                }
+                            // Step 2: Schedule
+                            Wizard\Step::make('Schedule')
+                                ->icon('heroicon-o-calendar')
+                                ->description('Choose examination date')
+                                ->schema([
+                                     DatePicker::make('date_of_exam')
+                                                ->label('Examination Date')
+                                                ->required()
+                                                ->minDate($this->record->start_date)
+                                                ->maxDate($this->record->end_date)
+                                                ->native(false)
+                                                ->displayFormat('F d, Y')
+                                                ->helperText(function () {
+                                                    $startDate = \Carbon\Carbon::parse($this->record->start_date)->format('M d, Y');
+                                                    $endDate = \Carbon\Carbon::parse($this->record->end_date)->format('M d, Y');
 
-                                                return $testCenters->mapWithKeys(function ($testCenter) {
-                                                    return [$testCenter->id => "{$testCenter->name} ({$testCenter->campus->name})"];
-                                                })->toArray();
-                                            })
-                                            ->searchable()
-                                            ->required()
-                                            ->native(false)
-                                            ->helperText('Only active test centers are shown')
-                                            ->live()
-                                            ->columnSpanFull(),
+                                                    return "Must be between {$startDate} and {$endDate}";
+                                                }),
+                                ]),
 
-                                        TextInput::make('building_name')
-                                            ->label('Building Name')
-                                            ->required()
-                                            ->maxLength(255)
-                                            ->placeholder('e.g., Science Building, Main Campus Building A')
-                                            ->helperText('Specify the building where the examination will be held'),
-                                    ]),
+                            // Step 3: Capacity & Rooms
+                            Wizard\Step::make('Capacity & Rooms')
+                                ->icon('heroicon-o-building-office-2')
+                                ->description('Configure capacity and rooms')
+                                ->schema([
+                                     Grid::make(2)
+                                                ->schema([
+                                                    TextInput::make('total_examinees')
+                                                        ->numeric()
+                                                        ->label('Total Examinees')
+                                                        ->required()
+                                                        ->minValue(1)
+                                                        ->maxValue(10000)
+                                                        ->default(50)
+                                                        ->live(debounce: 500)
+                                                        ->helperText('Total number of examinees expected')
+                                                        ->suffix('examinees')
+                                                        ->rules([
+                                                            function (Get $get) {
+                                                                return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                                                    $rooms = (int) $get('number_of_rooms');
+                                                                    if ($rooms > 0 && $value % $rooms !== 0) {
+                                                                        $fail("Total examinees must be evenly divisible by the number of rooms. ({$value} examinees ÷ {$rooms} rooms = uneven distribution)");
+                                                                    }
+                                                                };
+                                                            },
+                                                        ]),
 
-                                // Tab 2: Schedule
-                                Tabs\Tab::make('Schedule')
-                                    ->icon('heroicon-o-calendar')
-                                    ->schema([
-                                        DatePicker::make('date_of_exam')
-                                            ->label('Examination Date')
-                                            ->required()
-                                            ->minDate($this->record->start_date)
-                                            ->maxDate($this->record->end_date)
-                                            ->native(false)
-                                            ->displayFormat('F d, Y')
-                                            ->helperText(function () {
-                                                $startDate = \Carbon\Carbon::parse($this->record->start_date)->format('M d, Y');
-                                                $endDate = \Carbon\Carbon::parse($this->record->end_date)->format('M d, Y');
-                                                return "Must be between {$startDate} and {$endDate}";
-                                            }),
-                                    ]),
+                                                    TextInput::make('number_of_rooms')
+                                                        ->numeric()
+                                                        ->label('Number of Rooms')
+                                                        ->required()
+                                                        ->minValue(1)
+                                                        ->maxValue(100)
+                                                        ->default(1)
+                                                        ->live(debounce: 500)
+                                                        ->helperText('Number of physical rooms to be used')
+                                                        ->suffix('rooms')
+                                                        ->rules([
+                                                            function (Get $get) {
+                                                                return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                                                    $total = (int) $get('total_examinees');
+                                                                    if ($total > 0 && $total % $value !== 0) {
+                                                                        $fail("Total examinees must be evenly divisible by the number of rooms. ({$total} examinees ÷ {$value} rooms = uneven distribution)");
+                                                                    }
+                                                                };
+                                                            },
+                                                        ]),
+                                                ]),
 
-                                // Tab 3: Capacity & Rooms
-                                Tabs\Tab::make('Capacity & Rooms')
-                                    ->icon('heroicon-o-building-office-2')
-                                    ->schema([
-                                        Grid::make(2)
-                                            ->schema([
-                                                TextInput::make('slots')
-                                                    ->numeric()
-                                                    ->label('Total Capacity')
-                                                    ->required()
-                                                    ->minValue(1)
-                                                    ->maxValue(10000)
-                                                    ->default(50)
-                                                    ->live(debounce: 500)
-                                                    ->helperText('Total number of examinees that can be accommodated')
-                                                    ->suffix('slots')
-                                                    ->rules([
-                                                        function (Get $get) {
-                                                            return function (string $attribute, $value, \Closure $fail) use ($get) {
-                                                                $rooms = (int) $get('number_of_rooms');
-                                                                if ($rooms > 0 && $value % $rooms !== 0) {
-                                                                    $fail("Total capacity must be evenly divisible by the number of rooms. ({$value} slots ÷ {$rooms} rooms = uneven distribution)");
-                                                                }
-                                                            };
-                                                        },
-                                                    ]),
+                                            // Live Preview
+                                            Placeholder::make('room_distribution_preview')
+                                                ->label('Distribution Preview')
+                                                ->content(function (Get $get): HtmlString {
+                                                    $total = (int) $get('total_examinees');
+                                                    $rooms = (int) $get('number_of_rooms');
 
-                                                TextInput::make('number_of_rooms')
-                                                    ->numeric()
-                                                    ->label('Number of Rooms')
-                                                    ->required()
-                                                    ->minValue(1)
-                                                    ->maxValue(100)
-                                                    ->default(1)
-                                                    ->live(debounce: 500)
-                                                    ->helperText('Number of physical rooms to be used')
-                                                    ->suffix('rooms')
-                                                    ->rules([
-                                                        function (Get $get) {
-                                                            return function (string $attribute, $value, \Closure $fail) use ($get) {
-                                                                $slots = (int) $get('slots');
-                                                                if ($slots > 0 && $slots % $value !== 0) {
-                                                                    $fail("Total capacity must be evenly divisible by the number of rooms. ({$slots} slots ÷ {$value} rooms = uneven distribution)");
-                                                                }
-                                                            };
-                                                        },
-                                                    ]),
-                                            ]),
+                                                    if ($total <= 0 || $rooms <= 0) {
+                                                        return new HtmlString('<div style="padding: 0.75rem; background-color: #f9fafb; border-radius: 0.375rem; border: 1px solid #e5e7eb;"><span style="color: #6b7280;">Enter values to see distribution preview</span></div>');
+                                                    }
 
-                                        // Live Preview
-                                        Placeholder::make('room_distribution_preview')
-                                            ->label('Room Distribution Preview')
-                                            ->content(function (Get $get): \Illuminate\Support\HtmlString {
-                                                $slots = (int) $get('slots');
-                                                $rooms = (int) $get('number_of_rooms');
+                                                    $capacityPerRoom = floor($total / $rooms);
+                                                    $remainder = $total % $rooms;
 
-                                                if ($slots <= 0 || $rooms <= 0) {
-                                                    return new \Illuminate\Support\HtmlString('<span style="color: gray;">Enter capacity and room count to see distribution</span>');
-                                                }
+                                                    if ($remainder === 0) {
+                                                        return new HtmlString("<div style='padding: 0.75rem; background-color: #f0fdf4; border-radius: 0.375rem; border: 1px solid #86efac;'><span style='color: #15803d; font-weight: 500;'>✓ Perfect: {$capacityPerRoom} examinees per room</span></div>");
+                                                    } else {
+                                                        return new HtmlString("<div style='padding: 0.75rem; background-color: #fef2f2; border-radius: 0.375rem; border: 1px solid #fca5a5;'><span style='color: #dc2626; font-weight: 500;'>⚠ Uneven distribution - adjust values</span></div>");
+                                                    }
+                                                }),
+                                ]),
 
-                                                $capacityPerRoom = floor($slots / $rooms);
-                                                $remainder = $slots % $rooms;
+                            // Step 4: Status & Confirmation
+                            Wizard\Step::make('Confirmation')
+                                ->icon('heroicon-o-check-circle')
+                                ->description('Review and activate')
+                                ->schema([
+                                    Toggle::make('is_active')
+                                                ->label('Active Slot')
+                                                ->default(true)
+                                                ->inline(false)
+                                                ->helperText('When active, students can apply for this examination slot'),
 
-                                                if ($remainder === 0) {
-                                                    return new \Illuminate\Support\HtmlString("<span style='color: green;'>✓ Perfect distribution: Each room will have exactly <strong>{$capacityPerRoom}</strong> slots.</span>");
-                                                } else {
-                                                    return new \Illuminate\Support\HtmlString("<span style='color: red;'>⚠ Uneven distribution: This configuration is not allowed. Please adjust the capacity or number of rooms so they divide evenly.</span>");
-                                                }
-                                            })
-                                            ->helperText('Rooms must have equal capacity for fair distribution'),
-                                    ]),
-
-                                // Tab 4: Status
-                                Tabs\Tab::make('Status')
-                                    ->icon('heroicon-o-check-circle')
-                                    ->schema([
-                                        Toggle::make('is_active')
-                                            ->label('Active')
-                                            ->default(true)
-                                            ->inline(false)
-                                            ->helperText('When active, students can apply for this examination slot'),
-                                    ]),
-                            ]),
+                                            
+                                ]),
+                        ])
+                            ->skippable(false),
                     ])->action(function (array $data) {
 
-                    DB::beginTransaction();
-                    try {
-                        $examination = $this->getRecord();
+                        DB::beginTransaction();
+                        try {
+                            $examination = $this->getRecord();
 
-                        // Validate date range
-                        $examDate = \Carbon\Carbon::parse($data['date_of_exam']);
-                        $startDate = \Carbon\Carbon::parse($examination->start_date);
-                        $endDate = \Carbon\Carbon::parse($examination->end_date);
+                            // Validate date range
+                            $examDate = \Carbon\Carbon::parse($data['date_of_exam']);
+                            $startDate = \Carbon\Carbon::parse($examination->start_date);
+                            $endDate = \Carbon\Carbon::parse($examination->end_date);
 
-                        if ($examDate->lt($startDate) || $examDate->gt($endDate)) {
-                            throw new \Exception('Examination date must be between ' . $startDate->format('M d, Y') . ' and ' . $endDate->format('M d, Y'));
+                            if ($examDate->lt($startDate) || $examDate->gt($endDate)) {
+                                throw new \Exception('Examination date must be between '.$startDate->format('M d, Y').' and '.$endDate->format('M d, Y'));
+                            }
+
+                            // Validate even distribution
+                            if ($data['total_examinees'] % $data['number_of_rooms'] !== 0) {
+                                throw new \Exception('Total examinees must be evenly divisible by the number of rooms for fair distribution.');
+                            }
+
+                            // Create examination slot
+                            $slot = ExaminationSlot::create([
+                                'examination_id' => $examination->id,
+                                'test_center_id' => $data['test_center_id'],
+                                'building_name' => $data['building_name'],
+                                'date_of_exam' => $data['date_of_exam'],
+                                'total_examinees' => $data['total_examinees'],
+                                'number_of_rooms' => $data['number_of_rooms'],
+                                'is_active' => $data['is_active'],
+                            ]);
+
+                            // ✅ Auto-generate examination rooms (capacity is computed, not stored)
+                            $rooms = [];
+
+                            for ($i = 1; $i <= $data['number_of_rooms']; $i++) {
+                                $rooms[] = [
+                                    'examination_slot_id' => $slot->id,
+                                    'room_number' => 'Room '.$i,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ];
+                            }
+
+                            ExaminationRoom::insert($rooms);
+
+                            DB::commit();
+
+                            Notification::make()
+                                ->title('Slot Created')
+                                ->body('Slot and corresponding rooms generated successfully.')
+                                ->success()
+                                ->send();
+                        } catch (\Throwable $th) {
+                            DB::rollBack();
+                            Notification::make()
+                                ->title('Error')
+                                ->body($th->getMessage())
+                                ->danger()
+                                ->send();
                         }
 
-                        // Validate even distribution
-                        if ($data['slots'] % $data['number_of_rooms'] !== 0) {
-                            throw new \Exception('Total capacity must be evenly divisible by the number of rooms for fair distribution.');
-                        }
-
-                        // Create examination slot
-                        $slot = ExaminationSlot::create([
-                            'examination_id' => $examination->id,
-                            'test_center_id' => $data['test_center_id'],
-                            'building_name' => $data['building_name'],
-                            'date_of_exam' => $data['date_of_exam'],
-                            'slots' => $data['slots'],
-                            'number_of_rooms' => $data['number_of_rooms'],
-                            'is_active' => $data['is_active'],
-                        ]);
-
-                        // ✅ Auto-generate examination rooms with equal capacity
-                        $rooms = [];
-                        $capacityPerRoom = $data['slots'] / $data['number_of_rooms']; // Now guaranteed to be even
-
-                        for ($i = 1; $i <= $data['number_of_rooms']; $i++) {
-                            $rooms[] = [
-                                'examination_slot_id' => $slot->id,
-                                'room_number' => 'Room '.$i,
-                                'capacity' => $capacityPerRoom,
-                                'occupied' => 0,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ];
-                        }
-
-                        ExaminationRoom::insert($rooms);
-
-                        DB::commit();
-
-                        Notification::make()
-                            ->title('Slot Created')
-                            ->body('Slot and corresponding rooms generated successfully.')
-                            ->success()
-                            ->send();
-                    } catch (\Throwable $th) {
-                        DB::rollBack();
-                        Notification::make()
-                            ->title('Error')
-                            ->body($th->getMessage())
-                            ->danger()
-                            ->send();
-                    }
-
-                }),
+                    }),
             ])
             ->filters([
-                // ...
+                    // ...
             ])
             ->recordActions([
 
-                Action::make('advance')
-                    ->label('View Rooms')
-                    ->modalSubmitAction(false)
-                    ->modalCancelAction(fn ($action) => $action->label('Close'))
-                    ->disabledForm()
-                    ->modalContent(fn ($record): View => view(
-                        'filament.resources.examinations.pages.examination-slot-rooms',
-                        ['record' => $record],
-                    ))
-                    ->modalWidth(Width::SevenExtraLarge),
+                    Action::make('advance')
+                        ->label('View Rooms')
+                        ->modalSubmitAction(false)
+                        ->modalCancelAction(fn ($action) => $action->label('Close'))
+                        ->disabledForm()
+                        ->modalContent(fn ($record): View => view(
+                            'filament.resources.examinations.pages.examination-slot-rooms',
+                            ['record' => $record],
+                        ))
+                        ->modalWidth(Width::SevenExtraLarge),
 
-                DeleteAction::make(),
+                    DeleteAction::make(),
             ])
             ->toolbarActions([
                 // ...

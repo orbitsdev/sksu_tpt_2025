@@ -31,7 +31,7 @@ return new class extends Migration
             $table->string('religion')->nullable();
 
             // Contact
-            $table->string('email')->nullable();
+            $table->string('email')->nullable()->unique();
             $table->string('contact_number', 20)->nullable();
 
             // Address
@@ -43,6 +43,9 @@ return new class extends Migration
             $table->string('region')->nullable();
             $table->string('zip_code', 10)->nullable();
             $table->timestamps();
+
+            // Index for performance
+            $table->index('user_id');
         });
     }
 
