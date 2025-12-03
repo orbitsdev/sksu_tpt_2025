@@ -5,18 +5,10 @@ namespace App\Models;
 use App\Models\ApplicationSlot;
 use App\Models\ExaminationSlot;
 use Illuminate\Database\Eloquent\Model;
-
+use App\Traits\Models\ExaminationRoomRelations;
 class ExaminationRoom extends Model
 {
+    use ExaminationRoomRelations;
 
-public function slot()
-{
-    return $this->belongsTo(ExaminationSlot::class, 'examination_slot_id');
-}
-
-public function applicationSlots()
-{
-    return $this->hasMany(ApplicationSlot::class, 'examination_room_id');
-}
 
 }

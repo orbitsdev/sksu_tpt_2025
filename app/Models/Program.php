@@ -4,12 +4,10 @@ namespace App\Models;
 
 use App\Models\Campus;
 use Illuminate\Database\Eloquent\Model;
-
+use App\Traits\Models\ProgramRelations;
 class Program extends Model
 {
+    use ProgramRelations;
 
-    public function campus()
-    {
-        return $this->belongsTo(Campus::class);
-    }
+
 }

@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
-use App\Models\User;
+
 use Illuminate\Database\Eloquent\Model;
+
+use App\Traits\Models\PersonalInformationRelations;
 
 class PersonalInformation extends Model
 {
-    public function user(){
-        return $this->belongsTo(User::class);
-    }
+    use PersonalInformationRelations;
+
+
 }

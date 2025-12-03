@@ -3,28 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use App\Traits\Models\ExaminationSlotRelations;
 class ExaminationSlot extends Model
 {
-    public function examination()
-    {
-        return $this->belongsTo(Examination::class);
-    }
-
-    public function campus()
-    {
-        return $this->belongsTo(Campus::class);
-    }
-
-    public function rooms()
-    {
-        return $this->hasMany(ExaminationRoom::class);
-    }
-
-    public function applicationSlots()
-    {
-        return $this->hasMany(ApplicationSlot::class);
-    }
+  use ExaminationSlotRelations;
 
     // helpers
     public function getTotalCapacityAttribute()

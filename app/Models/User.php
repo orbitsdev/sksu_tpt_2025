@@ -5,15 +5,15 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Str;
 use App\Models\PersonalInformation;
+use App\Traits\Models\UserRelations;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Spatie\MediaLibrary\HasMedia;
+
 use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\Image\Enums\Fit;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
 
 class User extends Authenticatable
 {
@@ -21,6 +21,7 @@ class User extends Authenticatable
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
     use HasRoles;
     use InteractsWithMedia;
+    use UserRelations;
 
     /**
      * The attributes that are mass assignable.
@@ -75,8 +76,5 @@ class User extends Authenticatable
     {
         $this->addMediaCollection('student-profile')->singleFile();
     }
-    public function personalInformation()
-    {
-        return $this->hasOne(PersonalInformation::class);
-    }
+
 }

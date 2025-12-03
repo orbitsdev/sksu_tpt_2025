@@ -3,21 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Models\ApplicationSlotRelations;
 
 class ApplicationSlot extends Model
 {
-    public function application()
-    {
-        return $this->belongsTo(Application::class);
-    }
-
-    public function examinationSlot()
-    {
-        return $this->belongsTo(ExaminationSlot::class);
-    }
-
-    public function examinationRoom()
-    {
-        return $this->belongsTo(ExaminationRoom::class);
-    }
+use ApplicationSlotRelations;
 }
