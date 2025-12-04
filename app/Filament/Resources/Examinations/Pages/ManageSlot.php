@@ -130,9 +130,9 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
                         return new HtmlString("<strong style='color:{$color}'>{$remaining}</strong>");
                     }),
 
-                ToggleColumn::make('is_active')
-                    ->label('Active')
-                    ->alignCenter(),
+                // ToggleColumn::make('is_active')
+                //     ->label('Active')
+                //     ->alignCenter(),
             ])
             ->headerActions([
 

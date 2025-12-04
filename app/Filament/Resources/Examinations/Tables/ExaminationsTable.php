@@ -2,22 +2,23 @@
 
 namespace App\Filament\Resources\Examinations\Tables;
 
-use App\Filament\Tables\Columns\CapacitySummary;
+use Filament\Tables\Table;
 use App\Models\Examination;
 use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteAction;
+use Illuminate\Support\HtmlString;
+use Filament\Actions\BulkActionGroup;
 use Filament\Forms\Components\Toggle;
-use Filament\Notifications\Notification;
+use Filament\Support\Enums\Alignment;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
+use Filament\Notifications\Notification;
+use Filament\Tables\Columns\ColumnGroup;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\HtmlString;
+use App\Filament\Tables\Columns\CapacitySummary;
 
 class ExaminationsTable
 {
@@ -26,44 +27,53 @@ class ExaminationsTable
         return $table
             ->columns([
                 TextColumn::make('title')
-                    ->searchable(),
-                //     TextColumn::make('total_slots')
-                // ->sortable(),
-                // TextColumn::make('examination_slots')
-                //     ->label('Campuses & Slots')
-                //     ->html()
-                //     ->getStateUsing(function ($record) {
-                //         $slots = $record->examinationSlots()
-                //             ->with('campus')
-                //             ->get(['campus_id', 'slots', 'is_active']);
+                    ->searchable()
+                    ->sortable()
+                    ->weight('medium')
+                    ->description(fn (Examination $record): string =>
+                        $record->school_year . ' - ' . ucfirst($record->type)
+                    ),
 
-                //         if ($slots->isEmpty()) {
-                //             return '';
-                //         }
+                ColumnGroup::make('Schedule', [
+                    TextColumn::make('start_date')
+                        ->date()
+                        ->sortable(),
+                    TextColumn::make('end_date')
+                        ->date()
+                        ->sortable(),
+                ])->alignment(Alignment::Center),
 
-                //         // Create a simple line-separated list (no bullets)
-                //         $list = $slots->map(function ($slot) {
-                //             $campusName = e(optional($slot->campus)->name ?? 'Unknown Campus');
-                //             $slotsCount = e($slot->slots);
+                ColumnGroup::make('Status', [
+                    IconColumn::make('is_published')
+                        ->label('Visible')
+                        ->boolean()
+                        ->tooltip(fn ($state) => $state ? 'Exam is visible to students' : 'Exam is hidden from students'),
+                    IconColumn::make('is_application_open')
+                        ->label('Accepting Applications')
+                        ->boolean()
+                        ->tooltip(fn ($state) => $state ? 'Students can submit applications' : 'Applications are closed'),
+                ])->alignment(Alignment::Center),
 
-                //             return "{$campusName} — <strong>{$slotsCount}</strong>";
-                //         })->implode('<br>'); // 👈 line break instead of bullets
+                ColumnGroup::make('Overview', [
+                    TextColumn::make('examination_slots_count')
+                        ->label('Slots')
+                        ->badge()
+                        ->color('info')
+                        ->sortable()
+                        ->tooltip('Number of examination time slots'),
 
-                //         return new HtmlString($list);
-                //     })
-                //     ->toggleable(),
-                TextColumn::make('start_date')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('end_date')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('venue')
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
+                    TextColumn::make('applications_count')
+                        ->label('Applicants')
+                        ->badge()
+                        ->color('success')
+                        ->sortable()
+                        ->tooltip('Total number of applications received'),
+                ])->alignment(Alignment::Center),
 
-                IconColumn::make('is_published')
-                    ->label('Published')
-                    ->boolean()
+                CapacitySummary::make('capacity_summary')
+                    ->label('Capacity'),
+
+
                 // ->beforeStateUpdated(function ($record, bool $state) {
                 //     if ($state) {
                 //         $alreadyPublished = \App\Models\Examination::where('is_published', true)
@@ -92,11 +102,9 @@ class ExaminationsTable
                 // //         ->success()
                 // //         ->send();
                 // // })
-                ,
-                IconColumn::make('is_application_open')
-                    ->boolean()
-                    ->label('Application Open'),
-                CapacitySummary::make('capacity_summary')->label('Capacity Overview'),
+
+
+
                 // ->afterStateUpdated(function ($record, bool $state) {
                 //     if ($state) {
                 //         Notification::make()
@@ -134,17 +142,19 @@ class ExaminationsTable
                 //
             ])
             ->recordActions([
-                Action::make('manage_slots')
-                    ->button()
+
+                ActionGroup::make([
+                     Action::make('manage_slots')
+                    ->color('primary')
                     ->label('Manage Slots')
                     ->icon('heroicon-o-cog-6-tooth')
                     ->url(function (Examination $record): string {
                         return route('filament.admin.resources.examinations.manage-slot', ['record' => $record]);
                     }),
 
-                Action::make('settings')
-                    ->button()
-                    ->label('Settings')
+                      Action::make('publication')
+
+                    ->label('Publication Settings')
                     ->icon('heroicon-o-adjustments-horizontal')
                     ->color('gray')
                     ->disabled(fn (Examination $record): bool => $record->examinationSlots()->doesntExist())
@@ -153,7 +163,7 @@ class ExaminationsTable
                             ? 'Add examination slots first'
                             : null
                     )
-                    ->form([
+                    ->schema([
                         Toggle::make('is_published')
                             ->label('Published')
                             ->helperText('Make exam visible to students')
@@ -178,11 +188,14 @@ class ExaminationsTable
                             ->success()
                             ->send();
                     }),
+                    Action::make('View')
+                        ->label('View Details')
+                        ->icon('heroicon-o-information-circle')
 
-                ActionGroup::make([
-                    ViewAction::make(),
-                    EditAction::make(),
-                    DeleteAction::make(),
+                        ->url(fn (Examination $record) => \App\Filament\Resources\Examinations\ExaminationResource::getUrl('examination-details', ['record' => $record])
+                ),
+                    EditAction::make()->color('gray'),
+                    DeleteAction::make()->color('gray'),
                 ]),
 
             ])
@@ -194,8 +207,7 @@ class ExaminationsTable
             ->striped()
             ->modifyQueryUsing(function (Builder $query) {
                 $query->with(['examinationSlots.rooms'])
-                    // ->withSum('examination_slots.rooms as total_capacity', 'capacity')
-                    // ->withSum('examination_slots.rooms as total_occupied', 'occupied')
+                    ->withCount(['examinationSlots', 'applications'])
                     ->latest();
             });
     }

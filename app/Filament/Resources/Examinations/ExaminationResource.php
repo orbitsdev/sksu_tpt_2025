@@ -2,21 +2,23 @@
 
 namespace App\Filament\Resources\Examinations;
 
-use App\Filament\Resources\Examinations\Pages\CreateExamination;
-use App\Filament\Resources\Examinations\Pages\EditExamination;
-use App\Filament\Resources\Examinations\Pages\ListExaminations;
-use App\Filament\Resources\Examinations\Pages\ManageExaminationSlot;
-use App\Filament\Resources\Examinations\Pages\ViewExamination;
-use App\Filament\Resources\Examinations\Schemas\ExaminationForm;
-use App\Filament\Resources\Examinations\Schemas\ExaminationInfolist;
-use App\Filament\Resources\Examinations\Tables\ExaminationsTable;
-use App\Models\Examination;
-use BackedEnum;
-use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Table;
 use UnitEnum;
+use BackedEnum;
+use Filament\Tables\Table;
+use App\Models\Examination;
+use Filament\Schemas\Schema;
+
+use Filament\Resources\Resource;
+use Filament\Support\Icons\Heroicon;
+use App\Filament\Resources\Examinations\Pages\EditExamination;
+use App\Filament\Resources\Examinations\Pages\ViewExamination;
+use App\Filament\Resources\Examinations\Pages\ListExaminations;
+use App\Filament\Resources\Examinations\Pages\CreateExamination;
+use App\Filament\Resources\Examinations\Schemas\ExaminationForm;
+use App\Filament\Resources\Examinations\Pages\ExaminationDetails;
+use App\Filament\Resources\Examinations\Tables\ExaminationsTable;
+use App\Filament\Resources\Examinations\Schemas\ExaminationInfolist;
+
 class ExaminationResource extends Resource
 {
 protected static string | UnitEnum | null $navigationGroup = 'Management';
@@ -63,6 +65,7 @@ protected static string | UnitEnum | null $navigationGroup = 'Management';
             'view' => ViewExamination::route('/{record}'),
             'edit' => EditExamination::route('/{record}/edit'),
             'manage-slot' => Pages\ManageSlot::route('/{record}/manage-slot'),
+            'examination-details' => ExaminationDetails::route('/{record}/examination-details'),
 
         ];
     }
