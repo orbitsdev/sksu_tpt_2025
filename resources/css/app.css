@@ -52,6 +52,59 @@
     .border-sksu-green {
         border-color: var(--color-sksu-green);
     }
+
+    /* SKSU Header Navigation Styling */
+    .sksu-header .nav-item,
+    .sksu-header .nav-item .nav-text,
+    .sksu-header .nav-item svg {
+        color: white !important;
+        stroke: white !important;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border-radius: 0 !important;
+        text-decoration: none !important;
+        border-bottom: none !important;
+    }
+
+    /* Hover State */
+    .sksu-header .nav-item:hover,
+    .sksu-header .nav-item:hover .nav-text,
+    .sksu-header .nav-item:hover svg {
+        color: var(--color-sksu-gold) !important;
+        stroke: var(--color-sksu-gold) !important;
+        border-radius: 0 !important;
+        text-decoration: none !important;
+        border-bottom: none !important;
+    }
+
+    /* Active Tab Styling */
+    .sksu-header .active-tab {
+        color: var(--color-sksu-gold) !important;
+        border-bottom: 3px solid var(--color-sksu-gold) !important;
+        border-radius: 0 !important;
+        padding-bottom: 0.5rem;
+        text-decoration: none !important;
+    }
+
+    .sksu-header .active-tab .nav-text,
+    .sksu-header .active-tab svg {
+        color: var(--color-sksu-gold) !important;
+        stroke: var(--color-sksu-gold) !important;
+        border-bottom: none !important;
+        text-decoration: none !important;
+    }
+
+    /* Profile Avatar in Header */
+    .sksu-header [data-flux-profile] {
+        background-color: white !important;
+        color: var(--color-sksu-green) !important;
+        border: 2px solid white !important;
+    }
+
+    .sksu-header [data-flux-profile]:hover {
+        background-color: var(--color-sksu-gold) !important;
+        border-color: var(--color-sksu-gold) !important;
+    }
 }
 
 @layer base {

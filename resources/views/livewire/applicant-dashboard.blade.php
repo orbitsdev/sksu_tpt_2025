@@ -59,12 +59,29 @@
                         </div>
                     </div>
                 @empty
-                    <div class="text-center py-8">
-                        <svg class="mx-auto size-12 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <h3 class="mt-2 text-sm font-medium">No applications yet</h3>
-                        <p class="mt-1 text-sm text-neutral-500">Get started by applying to an available examination below.</p>
+                    <div class="text-center py-12">
+                        <div class="mx-auto w-48 h-48 mb-6">
+                            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="100" cy="100" r="80" fill="#E6F200" opacity="0.1"/>
+                                <rect x="60" y="80" width="80" height="60" rx="4" fill="#063A15" opacity="0.1"/>
+                                <rect x="70" y="90" width="60" height="40" fill="white" stroke="#063A15" stroke-width="2"/>
+                                <line x1="75" y1="100" x2="110" y2="100" stroke="#E6F200" stroke-width="3"/>
+                                <line x1="75" y1="110" x2="120" y2="110" stroke="#063A15" stroke-width="2" opacity="0.3"/>
+                                <line x1="75" y1="120" x2="115" y2="120" stroke="#063A15" stroke-width="2" opacity="0.3"/>
+                                <circle cx="145" cy="60" r="8" fill="#E6F200"/>
+                                <circle cx="160" cy="70" r="6" fill="#063A15" opacity="0.3"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-sksu-green">No applications yet</h3>
+                        <p class="mt-2 text-sm text-neutral-500">Get started by applying to an available examination below.</p>
+                        <div class="mt-6">
+                            <a href="{{ route('applicant.examinations') }}" class="inline-flex items-center gap-2 rounded-md bg-sksu-green px-4 py-2 text-sm font-medium text-white hover:bg-sksu-green-light">
+                                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                Browse Examinations
+                            </a>
+                        </div>
                     </div>
                 @endforelse
             </div>

@@ -64,17 +64,18 @@ class ApplicantExaminations extends Component
             $query->where('is_application_open', false);
         }
 
-        $examinations = $query->latest()
-            ->paginate(10)
-            ->map(function ($exam) use ($appliedExaminationIds) {
-                // Calculate capacity
-                $totalCapacity = $exam->examinationSlots->flatMap(fn($slot) => $slot->rooms)->sum('capacity');
-                $totalOccupied = $exam->examinationSlots->flatMap(fn($slot) => $slot->rooms)->sum('occupied');
-                $exam->available_slots = max($totalCapacity - $totalOccupied, 0);
-                $exam->total_capacity = $totalCapacity;
-                $exam->has_applied = in_array($exam->id, $appliedExaminationIds);
-                return $exam;
-            });
+        $examinations = $query->latest()->paginate(10);
+
+        // Transform paginated items while maintaining pagination
+        $examinations->through(function ($exam) use ($appliedExaminationIds) {
+            // Calculate capacity
+            $totalCapacity = $exam->examinationSlots->flatMap(fn($slot) => $slot->rooms)->sum('capacity');
+            $totalOccupied = $exam->examinationSlots->flatMap(fn($slot) => $slot->rooms)->sum('occupied');
+            $exam->available_slots = max($totalCapacity - $totalOccupied, 0);
+            $exam->total_capacity = $totalCapacity;
+            $exam->has_applied = in_array($exam->id, $appliedExaminationIds);
+            return $exam;
+        });
 
         // Get counts for filter buttons
         $filterCounts = [

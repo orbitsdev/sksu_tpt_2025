@@ -8,25 +8,37 @@
 </head>
 
 <body class="min-h-screen bg-white dark:bg-zinc-800">
-    <flux:header container class="border-b border-sksu-green bg-sksu-green dark:border-sksu-green-dark">
-        <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
+    <flux:header container class="sksu-header border-b border-sksu-green bg-sksu-green dark:border-sksu-green-dark">
+        <flux:sidebar.toggle class="lg:hidden text-white" icon="bars-2" inset="left" />
 
         <a href="{{ route('applicant.dashboard') }}" class="ms-2 me-5 flex items-center space-x-2 rtl:space-x-reverse lg:ms-0">
             <x-app-logo />
         </a>
 
-        <flux:navbar class="-mb-px max-lg:hidden text-white">
-            <flux:navbar.item icon="home" :href="route('applicant.dashboard')" :current="request()->routeIs('applicant.dashboard')" class="text-white hover:text-sksu-gold">
-                {{ __('Dashboard') }}
+        <flux:navbar class="-mb-px max-lg:hidden">
+            <flux:navbar.item
+                icon="home"
+                :href="route('applicant.dashboard')"
+                :current="request()->routeIs('applicant.dashboard')"
+                class="nav-item {{ request()->routeIs('applicant.dashboard') ? 'active-tab' : '' }}">
+                <span class="nav-text">{{ __('Dashboard') }}</span>
             </flux:navbar.item>
 
             @role('student')
-            <flux:navbar.item icon="document-text" :href="route('applicant.applications')" :current="request()->routeIs('applicant.applications')" class="text-white hover:text-sksu-gold">
-                {{ __('My Applications') }}
+            <flux:navbar.item
+                icon="document-text"
+                :href="route('applicant.applications')"
+                :current="request()->routeIs('applicant.applications')"
+                class="nav-item {{ request()->routeIs('applicant.applications') ? 'active-tab' : '' }}">
+                <span class="nav-text">{{ __('My Applications') }}</span>
             </flux:navbar.item>
 
-            <flux:navbar.item icon="academic-cap" :href="route('applicant.examinations')" :current="request()->routeIs('applicant.examinations')" class="text-white hover:text-sksu-gold">
-                {{ __('Examinations') }}
+            <flux:navbar.item
+                icon="academic-cap"
+                :href="route('applicant.examinations')"
+                :current="request()->routeIs('applicant.examinations')"
+                class="nav-item {{ request()->routeIs('applicant.examinations') ? 'active-tab' : '' }}">
+                <span class="nav-text">{{ __('Examinations') }}</span>
             </flux:navbar.item>
             @endrole
         </flux:navbar>
