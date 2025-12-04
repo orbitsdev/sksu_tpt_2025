@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Auth\AdminLogin;
+use App\Http\Middleware\EnsureHasAdminRole;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -55,12 +56,14 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+
             ])
             ->login(AdminLogin::class)
             ->brandLogo(fn () => view('filament.admin.logo'))
             ->brandLogoHeight('2rem')
             ->authMiddleware([
                 Authenticate::class,
+                EnsureHasAdminRole::class,
             ])
             // ->sidebarFullyCollapsibleOnDesktop(true)
             ->viteTheme('resources/css/filament/admin/theme.css')

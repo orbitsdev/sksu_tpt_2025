@@ -8,7 +8,9 @@
       "Bash(xargs:*)",
       "Bash(mysql:*)",
       "Bash(herd php artisan tinker:*)",
-      "Bash(herd php artisan:*)"
+      "Bash(herd php artisan:*)",
+      "Bash(findstr:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,29 +1,58 @@
 <?php
 
-use App\Livewire\Settings\Appearance;
-use App\Livewire\Settings\Password;
-use App\Livewire\Settings\Profile;
-use App\Livewire\Settings\TwoFactor;
-use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
+use App\Livewire\Settings\Profile;
+use App\Livewire\Settings\Password;
+use App\Livewire\Settings\TwoFactor;
+use App\Livewire\Settings\Appearance;
+use Illuminate\Support\Facades\Route;
 
+/**
+ * Public Routes
+ */
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
+/**
+ * Admin Routes
+ * TODO: Move to routes/admin.php
+ */
 Route::get('/admin-dashboard',function(){
     return 'test dashobard ';
 })->name('admin-dashboard');
 
+/**
+ * Staff Routes
+ * TODO: Move to routes/staff.php
+ */
 Route::get('/staff/dashboard', function () {
     return 'staff dashobard ';
 })->name('staff.dashboard');
 
-Route::get('/student-dashboard', function () {
-    return 'student dashobard ';
-})->name('student.dashboard');
+/**
+ * Dashboard Route - Role-based redirection
+ * Redirects users to their appropriate dashboard based on role
+ */
+Route::get('dashboard', function(){
+    $user = auth()->user();
 
-Route::view('dashboard', 'dashboard')
+    // Redirect based on role
+    if ($user->hasRole('admin')) {
+        return redirect()->route('filament.admin.pages.dashboard');
+    }
+
+    if ($user->hasRole('staff')) {
+        return redirect()->route('staff.dashboard');
+    }
+
+    if ($user->hasRole('student')) {
+        return redirect()->route('applicant.dashboard');
+    }
+
+    // Fallback for users without roles
+    return redirect()->route('home');
+})
     ->middleware(['auth'])
     ->name('dashboard');
 

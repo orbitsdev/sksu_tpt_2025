@@ -86,39 +86,39 @@ class ExaminationTestSeeder extends Seeder
             $allSlots = ExaminationSlot::with('rooms')->get();
 
             // 🎓 4️⃣ Use the existing applicant user
-            $applicant = User::where('email', 'applicant@gmail.com')->first();
+            // $applicant = User::where('email', 'applicant@gmail.com')->first();
 
-            if (! $applicant) {
-                throw new \Exception('⚠️ applicant@gmail.com user not found. Please run DefaultAccountSeeder first.');
-            }
+            // if (! $applicant) {
+            //     throw new \Exception('⚠️ applicant@gmail.com user not found. Please run DefaultAccountSeeder first.');
+            // }
 
-            // 👩‍🎓 5️⃣ Create 10 dummy applications for the applicant
-            for ($i = 1; $i <= 10; $i++) {
-                $application = Application::create([
-                    'examination_id' => $exam->id,
-                    'user_id' => $applicant->id, // ✅ real user
-                    'exam_number' => rand(1000, 9999),
-                    'examinee_number' => "EXM-2025-{$i}",
-                    'permit_number' => "PERMIT-{$i}",
-                    'permit_issued_at' => now(),
-                    'status' => 'Approved',
-                ]);
+            // // 👩‍🎓 5️⃣ Create 10 dummy applications for the applicant
+            // for ($i = 1; $i <= 10; $i++) {
+            //     $application = Application::create([
+            //         'examination_id' => $exam->id,
+            //         'user_id' => $applicant->id, // ✅ real user
+            //         'exam_number' => rand(1000, 9999),
+            //         'examinee_number' => "EXM-2025-{$i}",
+            //         'permit_number' => "PERMIT-{$i}",
+            //         'permit_issued_at' => now(),
+            //         'status' => 'Approved',
+            //     ]);
 
-                // 🎯 Assign to random slot & room
-                $randomSlot = $allSlots->random();
-                $availableRooms = $randomSlot->rooms->filter(fn($room) => !$room->isFull());
+            //     // 🎯 Assign to random slot & room
+            //     $randomSlot = $allSlots->random();
+            //     $availableRooms = $randomSlot->rooms->filter(fn($room) => !$room->isFull());
 
-                if ($availableRooms->isNotEmpty()) {
-                    $randomRoom = $availableRooms->random();
+            //     if ($availableRooms->isNotEmpty()) {
+            //         $randomRoom = $availableRooms->random();
 
-                    ApplicationSlot::create([
-                        'application_id' => $application->id,
-                        'examination_slot_id' => $randomSlot->id,
-                        'examination_room_id' => $randomRoom->id,
-                        'seat_number' => $randomRoom->occupied + 1,
-                    ]);
-                }
-            }
+            //         ApplicationSlot::create([
+            //             'application_id' => $application->id,
+            //             'examination_slot_id' => $randomSlot->id,
+            //             'examination_room_id' => $randomRoom->id,
+            //             'seat_number' => $randomRoom->occupied + 1,
+            //         ]);
+            //     }
+            // }
         });
 
         echo "✅ Examination test data seeded successfully.\n";

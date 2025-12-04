@@ -7,60 +7,18 @@
         <flux:sidebar sticky stashable class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
-            <a href="{{ route('dashboard') }}" class="me-5 flex items-center space-x-2 rtl:space-x-reverse" >
+            <a href="{{ route('applicant.dashboard') }}" class="me-5 flex items-center space-x-2 rtl:space-x-reverse" >
                 <x-app-logo />
             </a>
 
             <flux:navlist variant="outline">
-                {{-- Admin Navigation --}}
-                @role('admin')
-                <flux:navlist.group :heading="__('Administration')" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')">{{ __('Dashboard') }}</flux:navlist.item>
-                    <flux:navlist.item icon="academic-cap" href="/admin/examinations">{{ __('Examinations') }}</flux:navlist.item>
-                    <flux:navlist.item icon="users" href="/admin/users">{{ __('Users') }}</flux:navlist.item>
-                    <flux:navlist.item icon="chart-bar" href="/admin/reports">{{ __('Reports') }}</flux:navlist.item>
-                    <flux:navlist.item icon="cog" href="/admin/settings">{{ __('Settings') }}</flux:navlist.item>
+                <flux:navlist.group :heading="__('Examination')" class="grid">
+                    <flux:navlist.item icon="home" :href="route('applicant.dashboard')" :current="request()->routeIs('applicant.dashboard')" >{{ __('Dashboard') }}</flux:navlist.item>
+                    <flux:navlist.item icon="document-text" href="#" >{{ __('My Applications') }}</flux:navlist.item>
                 </flux:navlist.group>
-                @endrole
-
-                {{-- Staff Navigation --}}
-                @role('staff')
-                <flux:navlist.group :heading="__('Staff Panel')" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')">{{ __('Dashboard') }}</flux:navlist.item>
-                    <flux:navlist.item icon="academic-cap" href="/staff/examinations">{{ __('Examinations') }}</flux:navlist.item>
-                    <flux:navlist.item icon="document-text" href="/staff/applications">{{ __('Applications') }}</flux:navlist.item>
-                    <flux:navlist.item icon="users" href="/staff/applicants">{{ __('Applicants') }}</flux:navlist.item>
-                </flux:navlist.group>
-                @endrole
-
-                {{-- Student Navigation --}}
-                @role('student')
-                <flux:navlist.group :heading="__('Student Panel')" class="grid">
-                    <flux:navlist.item icon="home" :href="route('applicant.dashboard')" :current="request()->routeIs('applicant.dashboard')">{{ __('Dashboard') }}</flux:navlist.item>
-                    <flux:navlist.item icon="document-text" :href="route('applicant.applications')" :current="request()->routeIs('applicant.applications')">{{ __('My Applications') }}</flux:navlist.item>
-                    <flux:navlist.item icon="academic-cap" :href="route('applicant.examinations')" :current="request()->routeIs('applicant.examinations')">{{ __('Examinations') }}</flux:navlist.item>
-                </flux:navlist.group>
-                @endrole
-
-                {{-- Fallback for users without role --}}
-                @unlessrole('admin|staff|student')
-                <flux:navlist.group :heading="__('Platform')" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')">{{ __('Dashboard') }}</flux:navlist.item>
-                </flux:navlist.group>
-                @endunlessrole
             </flux:navlist>
 
             <flux:spacer />
-
-            <flux:navlist variant="outline">
-                {{-- <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                {{ __('Repository') }}
-                </flux:navlist.item>
-
-                <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
-                {{ __('Documentation') }}
-                </flux:navlist.item> --}}
-            </flux:navlist>
 
             <!-- Desktop User Menu -->
             <flux:dropdown class="hidden lg:block" position="bottom" align="start">

@@ -24,23 +24,23 @@ class DefaultAccountSeeder extends Seeder
         );
         $admin->assignRole('admin');
 
-        $staff = User::firstOrCreate(
-            ['email' => 'staff@gmail.com'],
-            [
-                'name' => 'Staff User',
-                'password' => Hash::make('password'),
-            ]
-        );
-        $staff->assignRole('staff');
+        // $staff = User::firstOrCreate(
+        //     ['email' => 'staff@gmail.com'],
+        //     [
+        //         'name' => 'Staff User',
+        //         'password' => Hash::make('password'),
+        //     ]
+        // );
+        // $staff->assignRole('staff');
 
-        $student = User::firstOrCreate(
-            ['email' => 'student@gmail.com'],
-            [
-                'name' => 'Student User',
-                'password' => Hash::make('password'),
-            ]
-        );
-        $student->assignRole('student');
+        // $student = User::firstOrCreate(
+        //     ['email' => 'student@gmail.com'],
+        //     [
+        //         'name' => 'Student User',
+        //         'password' => Hash::make('password'),
+        //     ]
+        // );
+        // $student->assignRole('student');
         $student = User::firstOrCreate(
             ['email' => 'applicant@gmail.com'],
             [

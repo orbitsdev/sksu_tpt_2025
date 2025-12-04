@@ -16,17 +16,23 @@ class LoginResponse implements LoginResponseContract
             $intendedUrl = session()->pull('intended_url');
             return redirect()->to($intendedUrl);
         }
-        // dd(Auth::user()->hasRole('admin'));
-        // if(Auth::user()->hasRole('admin')) {
-        //     return redirect()->route('admin-dashboard');
-        // }
-        // if(Auth::user()->hasRole('staff')) {
-        //     return redirect()->route('staff.dashboard');
-        // }
-        // if(Auth::user()->hasRole('student')) {
-        //     return redirect()->route('student.dashboard');
-        // }
 
+        $user = Auth::user();
+
+        // Role-based redirection
+        if ($user->hasRole('admin')) {
+           return redirect()->route('filament.admin.pages.dashboard');
+        }
+
+        if ($user->hasRole('staff')) {
+            return redirect()->route('staff.dashboard');
+        }
+
+        if ($user->hasRole('student')) {
+            return redirect()->route('applicant.dashboard');
+        }
+
+        // Fallback to default dashboard
         return redirect()->intended(filament()->getUrl());
     }
 }

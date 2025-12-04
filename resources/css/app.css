@@ -14,16 +14,43 @@
     --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
     --font-mono: Geist Mono, ui-monospace, monospace;
 
-    --color-accent: var(--color-emerald-600);
-    --color-accent-content: var(--color-emerald-600);
+    /* SKSU Theme Colors */
+    --color-sksu-green: #063A15;
+    --color-sksu-gold: #E6F200;
+    --color-sksu-green-light: #0a5a20;
+    --color-sksu-green-dark: #042610;
+
+    --color-accent: var(--color-sksu-green);
+    --color-accent-content: var(--color-sksu-green);
     --color-accent-foreground: var(--color-white);
 }
 
 @layer theme {
     .dark {
-        --color-accent: var(--color-emerald-600);
-        --color-accent-content: var(--color-emerald-400);
+        --color-accent: var(--color-sksu-green-light);
+        --color-accent-content: var(--color-sksu-green-light);
         --color-accent-foreground: var(--color-white);
+    }
+
+    /* SKSU Custom Classes */
+    .bg-sksu-green {
+        background-color: var(--color-sksu-green);
+    }
+
+    .bg-sksu-gold {
+        background-color: var(--color-sksu-gold);
+    }
+
+    .text-sksu-green {
+        color: var(--color-sksu-green);
+    }
+
+    .text-sksu-gold {
+        color: var(--color-sksu-gold);
+    }
+
+    .border-sksu-green {
+        border-color: var(--color-sksu-green);
     }
 }
 
