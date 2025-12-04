@@ -34,4 +34,14 @@ class ExaminationSlot extends Model
     {
         return $this->total_capacity - $this->total_occupied;
     }
+
+    public function hasAssignedStudents(): bool
+    {
+        return $this->rooms()->whereHas('applicationSlots')->exists();
+    }
+
+    public function getAssignedStudentsCountAttribute(): int
+    {
+        return $this->applicationSlots()->count();
+    }
 }

@@ -34,6 +34,27 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 
+/**
+ * Examination Slot Management
+ *
+ * DESIGN PRINCIPLE: Slots are IMMUTABLE once students are assigned
+ *
+ * Why we don't allow editing slots with assigned students:
+ * 1. Data Integrity - Changing capacity/rooms would invalidate existing seat assignments
+ * 2. Student Confusion - Students already have assigned rooms/seats that would change
+ * 3. Complexity - Cascading changes to rooms, seats, and application_slots records
+ * 4. Audit Trail - Need to preserve original slot configuration
+ *
+ * Instead of editing: CREATE NEW SLOTS
+ * - Need more capacity? → Create additional slot (same or different date/building)
+ * - Wrong configuration? → Deactivate old slot, create new one
+ * - Different location? → Create new slot with correct building
+ *
+ * Protection Rules:
+ * - DELETE: Only allowed if no students assigned (application_slots.count = 0)
+ * - EDIT: Not implemented - create new slot instead
+ * - DEACTIVATE: Always allowed via is_active toggle (prevents new applications)
+ */
 class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
 {
     use InteractsWithRecord;
@@ -75,6 +96,7 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
                 ExaminationSlot::query()
                     ->where('examination_id', $this->record->id)
                     ->with(['examination', 'testCenter.campus', 'rooms'])
+                    ->withCount('applicationSlots')
             )
             ->columns([
                 TextColumn::make('testCenter.campus.name')
@@ -100,27 +122,20 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
                 TextColumn::make('total_capacity')
                     ->label('Total Capacity')
                     ->alignCenter()
-
                     ->getStateUsing(fn ($record) => $record->rooms->sum('capacity')),
 
                 TextColumn::make('number_of_rooms')
                     ->label('# Rooms')
                     ->alignCenter(),
 
-                // 🧮 Total capacity (sum of room capacities)
-
-                // 👥 Occupied seats (sum of room.occupied)
                 TextColumn::make('occupied')
                     ->label('Occupied')
                     ->alignCenter()
-
                     ->getStateUsing(fn ($record) => $record->rooms->sum('occupied')),
 
-                // 🎯 Remaining = capacity - occupied
                 TextColumn::make('remaining')
                     ->label('Available')
                     ->alignCenter()
-
                     ->getStateUsing(function ($record) {
                         $capacity = $record->rooms->sum('capacity');
                         $occupied = $record->rooms->sum('occupied');
@@ -129,6 +144,19 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
 
                         return new HtmlString("<strong style='color:{$color}'>{$remaining}</strong>");
                     }),
+
+                TextColumn::make('assigned_students')
+                    ->label('Assigned Students')
+                    ->alignCenter()
+                    ->badge()
+                    ->color(fn ($record): string => $record->hasAssignedStudents() ? 'warning' : 'gray')
+                    ->icon(fn ($record): string => $record->hasAssignedStudents() ? 'heroicon-o-lock-closed' : 'heroicon-o-lock-open')
+                    ->getStateUsing(fn ($record) => $record->assigned_students_count)
+                    ->tooltip(fn ($record): string =>
+                        $record->hasAssignedStudents()
+                            ? 'Students assigned - slot cannot be deleted'
+                            : 'No students assigned - slot can be deleted'
+                    ),
 
                 // ToggleColumn::make('is_active')
                 //     ->label('Active')
@@ -353,10 +381,9 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
 
                     Action::make('view_rooms')
                         ->label('View Rooms')
-
                         ->icon('fontisto-room')
-                       ->button()
-                       ->color('primary')
+                        ->button()
+                        ->color('primary')
                         ->modalHeading(fn ($record) => 'Rooms for ' . $record->building_name)
                         ->modalDescription(fn ($record) => $record->testCenter->name . ' - ' . \Carbon\Carbon::parse($record->date_of_exam)->format('M d, Y'))
                         ->modalSubmitAction(false)
@@ -368,7 +395,15 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
                         ))
                         ->modalWidth(Width::Full),
 
-                    DeleteAction::make(),
+                    DeleteAction::make()
+                        ->disabled(fn (ExaminationSlot $record): bool =>
+                            $record->rooms()->whereHas('applicationSlots')->exists()
+                        )
+                        ->tooltip(fn (ExaminationSlot $record): ?string =>
+                            $record->rooms()->whereHas('applicationSlots')->exists()
+                                ? 'Cannot delete: Students are already assigned to this slot'
+                                : null
+                        ),
             ])
             ->toolbarActions([
                 // ...
