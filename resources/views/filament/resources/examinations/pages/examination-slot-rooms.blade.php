@@ -1,20 +1,6 @@
 
 
-    <div class="bg-white dark:bg-gray-900">
-
-        {{-- 🧭 Slot Header --}}
-        <div class="mb-6">
-            <h2 class="text-xl font-bold text-gray-900 dark:text-white">
-                {{ $record->examination->title ?? 'Unknown Exam' }}
-            </h2>
-            <p class="text-sm text-gray-600 dark:text-gray-400">
-
-                Campus: <strong>{{ $record->testCenter->campus->name ?? 'N/A' }}</strong><br>
-                Test Center: <strong>{{ $record->testCenter->name ?? 'N/A' }}</strong><br>
-                Building: <strong>{{ $record->building_name ?? 'N/A' }}</strong><br>
-                Date: <strong>{{ \Carbon\Carbon::parse($record->date_of_exam)->format('F d, Y') }}</strong>
-            </p>
-        </div>
+    <div class="space-y-4">
 
         {{-- 🧱 Table --}}
         <div class="overflow-x-auto">
@@ -67,14 +53,26 @@
             </table>
         </div>
 
-        {{-- 🧮 Footer summary --}}
-        <div class="mt-6 text-right text-sm text-gray-700 dark:text-gray-300">
-            <span>Total Capacity:</span>
-            <strong>{{ $record->rooms->sum('capacity') }}</strong> |
-            <span>Occupied:</span>
-            <strong>{{ $record->rooms->sum('occupied') }}</strong> |
-            <span>Available:</span>
-            <strong>{{ $record->rooms->sum('capacity') - $record->rooms->sum('occupied') }}</strong>
+        {{-- 🧮 Summary Cards --}}
+        <div class="grid grid-cols-3 gap-4">
+            <div class="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-4 text-center">
+                <div class="text-sm font-medium text-blue-600 dark:text-blue-400">Total Capacity</div>
+                <div class="mt-1 text-2xl font-bold text-blue-700 dark:text-blue-300">
+                    {{ $record->rooms->sum('capacity') }}
+                </div>
+            </div>
+            <div class="rounded-lg bg-orange-50 dark:bg-orange-900/20 p-4 text-center">
+                <div class="text-sm font-medium text-orange-600 dark:text-orange-400">Occupied</div>
+                <div class="mt-1 text-2xl font-bold text-orange-700 dark:text-orange-300">
+                    {{ $record->rooms->sum('occupied') }}
+                </div>
+            </div>
+            <div class="rounded-lg bg-green-50 dark:bg-green-900/20 p-4 text-center">
+                <div class="text-sm font-medium text-green-600 dark:text-green-400">Available</div>
+                <div class="mt-1 text-2xl font-bold text-green-700 dark:text-green-300">
+                    {{ max($record->rooms->sum('capacity') - $record->rooms->sum('occupied'), 0) }}
+                </div>
+            </div>
         </div>
 
     </div>

@@ -10,7 +10,7 @@ use Filament\Actions\Action;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Placeholder;
+
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -18,7 +18,6 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Wizard;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
@@ -351,9 +350,13 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
             ])
             ->recordActions([
 
-                    Action::make('advance')
+                    Action::make('view_rooms')
                         ->label('View Rooms')
-                        ->button()
+                        ->icon('heroicon-o-building-office-2')
+                       ->button()
+                       ->color('primary')
+                        ->modalHeading(fn ($record) => 'Rooms for ' . $record->building_name)
+                        ->modalDescription(fn ($record) => $record->testCenter->name . ' - ' . \Carbon\Carbon::parse($record->date_of_exam)->format('M d, Y'))
                         ->modalSubmitAction(false)
                         ->modalCancelAction(fn ($action) => $action->label('Close'))
                         ->disabledForm()
@@ -361,7 +364,7 @@ class ManageSlot extends Page implements HasActions, HasSchemas, HasTable
                             'filament.resources.examinations.pages.examination-slot-rooms',
                             ['record' => $record],
                         ))
-                        ->modalWidth(Width::SevenExtraLarge),
+                        ->modalWidth(Width::Full),
 
                     DeleteAction::make(),
             ])
