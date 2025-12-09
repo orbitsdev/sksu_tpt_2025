@@ -14,7 +14,7 @@ class DefaultAccountSeeder extends Seeder
      */
     public function run(): void
     {
-       // Create test accounts
+        // Admin User
         $admin = User::firstOrCreate(
             ['email' => 'admin@gmail.com'],
             [
@@ -25,23 +25,40 @@ class DefaultAccountSeeder extends Seeder
         );
         $admin->assignRole('admin');
 
-        // $staff = User::firstOrCreate(
-        //     ['email' => 'staff@gmail.com'],
-        //     [
-        //         'name' => 'Staff User',
-        //         'password' => Hash::make('password'),
-        //     ]
-        // );
-        // $staff->assignRole('staff');
+        // Staff User
+        $staff = User::firstOrCreate(
+            ['email' => 'staff@gmail.com'],
+            [
+                'name' => 'Staff User',
+                'password' => Hash::make('password'),
+                'campus_id' => 1
+            ]
+        );
+        $staff->assignRole('staff');
 
-        // $student = User::firstOrCreate(
-        //     ['email' => 'student@gmail.com'],
-        //     [
-        //         'name' => 'Student User',
-        //         'password' => Hash::make('password'),
-        //     ]
-        // );
-        // $student->assignRole('student');
+        // Cashier User
+        $cashier = User::firstOrCreate(
+            ['email' => 'cashier@gmail.com'],
+            [
+                'name' => 'Cashier User',
+                'password' => Hash::make('password'),
+                'campus_id' => 1
+            ]
+        );
+        $cashier->assignRole('cashier');
+
+        // Support User (handles tickets/concerns)
+        $support = User::firstOrCreate(
+            ['email' => 'support@gmail.com'],
+            [
+                'name' => 'Support User',
+                'password' => Hash::make('password'),
+                'campus_id' => 1
+            ]
+        );
+        $support->assignRole('support');
+
+        // Student/Applicant User
         $student = User::firstOrCreate(
             ['email' => 'applicant@gmail.com'],
             [
@@ -52,6 +69,6 @@ class DefaultAccountSeeder extends Seeder
         );
         $student->assignRole('student');
 
-        $this->command->info('✅ Default users created and assigned roles.');
+        $this->command->info('✅ Default users created: admin, staff, cashier, support, applicant');
     }
 }

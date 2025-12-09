@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+
 
 class PersonalInformationSeeder extends Seeder
 {
@@ -29,7 +29,6 @@ class PersonalInformationSeeder extends Seeder
                 'middle_name' => 'Santos',
                 'last_name' => 'Dela Cruz',
                 'suffix' => null,
-                'nickname' => 'Juan',
                 'sex' => 'Male',
                 'birth_date' => '2004-05-15',
                 'birth_place' => 'Koronadal City',
