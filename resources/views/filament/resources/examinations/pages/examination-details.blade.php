@@ -58,7 +58,7 @@
                         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Type</dt>
                         <dd class="mt-1">
                             <span class="inline-flex items-center rounded-md border border-gray-200 bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 dark:border-white/10 dark:bg-gray-800 dark:text-gray-300">
-                                {{ ucfirst($exam->type) }}
+                                {{ ucfirst($exam->exam_type) }}
                             </span>
                         </dd>
                     </div>
@@ -66,7 +66,7 @@
                     <div>
                         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</dt>
                         <dd class="mt-1 flex gap-2">
-                            @if($exam->is_published)
+                            @if($exam->is_public)
                                 <span class="inline-flex items-center rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 dark:border-white/20 dark:bg-gray-800 dark:text-gray-300">
                                     <x-filament::icon icon="heroicon-o-eye" class="mr-1 h-3 w-3" />
                                     Visible
@@ -78,7 +78,7 @@
                                 </span>
                             @endif
 
-                            @if($exam->is_application_open)
+                            @if($exam->application_open)
                                 <span class="inline-flex items-center rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 dark:border-white/20 dark:bg-gray-800 dark:text-gray-300">
                                     <x-filament::icon icon="heroicon-o-check-circle" class="mr-1 h-3 w-3" />
                                     Accepting

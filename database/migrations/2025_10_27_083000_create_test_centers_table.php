@@ -18,8 +18,6 @@ return new class extends Migration
             $table->text('address')->nullable()->comment('Address of the test center');
             $table->boolean('is_active')->default(true)->comment('Whether the test center is active');
             $table->timestamps();
-
-            // Indexes for performance
             $table->index('is_active');
         });
     }

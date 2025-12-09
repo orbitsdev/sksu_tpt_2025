@@ -18,17 +18,21 @@ return new class extends Migration
             //  Schedule
             $table->date('start_date')->nullable()->comment('Exam opening or first day');
             $table->date('end_date')->nullable()->comment('Exam closing or last day');
-            $table->boolean('is_published')->default(false)->comment('Indicates if the exam details are published');
-            $table->boolean('is_application_open')->default(false)->comment('Determines if examinee registration is open');
-            $table->boolean('show_result')->default(false)->comment('Determines if examinee result is displayed');
+            $table->boolean('is_public')->default(false)->comment('Indicates if the exam details are published');
+            $table->boolean('application_open')->default(false)->comment('Determines if examinee registration is open');
             $table->string('school_year')->nullable()->comment('Academic year, e.g. 2025-2026');
-            $table->string('type')->nullable()->comment('Exam type, e.g. Entrance, Midterm, Final');
+            $table->string('exam_type')->nullable()->comment('Exam type, e.g. Entrance, Midterm, Final');
+            $table->boolean('is_results_published')->default(false)->comment('Determines if examinee result is displayed');
+            $table->date('application_start_date')->nullable()->comment('Exam opening or first day');
+            $table->date('application_end_date')->nullable()->comment('Exam closing or last day');
+            $table->timestamp('results_published_at')->nullable();
+            $table->date('results_release_at')->nullable();
             $table->timestamps();
 
             // Indexes for performance
             $table->index('school_year');
-            $table->index('type');
-            $table->index('is_published');
+            $table->index('exam_type');
+            $table->index('is_public');
         });
     }
 

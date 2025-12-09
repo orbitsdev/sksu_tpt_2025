@@ -51,7 +51,7 @@
                                         {{ $exam->title }}
                                     </h3>
 
-                                    @if($exam->is_application_open)
+                                    @if($exam->application_open)
                                         <span class="inline-flex items-center gap-1 rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20 dark:bg-green-500/10 dark:text-green-400 dark:ring-green-500/20">
                                             <svg class="size-2 fill-green-500" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" /></svg>
                                             OPEN
@@ -76,7 +76,7 @@
                                     </div>
                                     <div>
                                         <span class="text-neutral-500 dark:text-neutral-400">Type:</span>
-                                        <span class="ml-1 font-medium">{{ ucfirst($exam->type) }}</span>
+                                        <span class="ml-1 font-medium">{{ ucfirst($exam->exam_type) }}</span>
                                     </div>
                                     <div>
                                         <span class="text-neutral-500 dark:text-neutral-400">Exam Date:</span>
@@ -113,7 +113,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                         </svg>
                                     </a>
-                                @elseif($exam->is_application_open && $exam->available_slots > 0)
+                                @elseif($exam->application_open && $exam->available_slots > 0)
                                     <button wire:click="startApplication({{ $exam->id }})"
                                         class="inline-flex items-center gap-2 rounded-md bg-sksu-green px-4 py-2 text-sm font-medium text-white hover:bg-sksu-green-light">
                                         Apply Now

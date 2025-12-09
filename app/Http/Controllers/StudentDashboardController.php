@@ -20,8 +20,8 @@ class StudentDashboardController extends Controller
             ->get();
 
         // Get active examinations (published and accepting applications)
-        $activeExaminations = Examination::where('is_published', true)
-            ->where('is_application_open', true)
+        $activeExaminations = Examination::where('is_public', true)
+            ->where('application_open', true)
             ->with(['examinationSlots.rooms'])
             ->withCount(['examinationSlots', 'applications'])
             ->latest()
@@ -36,8 +36,8 @@ class StudentDashboardController extends Controller
             });
 
         // Get upcoming examinations (published but applications not open yet)
-        $upcomingExaminations = Examination::where('is_published', true)
-            ->where('is_application_open', false)
+        $upcomingExaminations = Examination::where('is_public', true)
+            ->where('application_open', false)
             ->with(['examinationSlots'])
             ->latest()
             ->get();

@@ -17,13 +17,22 @@ class ExaminationInfolist
                     ->date(),
                 TextEntry::make('end_date')
                     ->date(),
-                TextEntry::make('venue'),
-                IconEntry::make('is_published')
+                IconEntry::make('is_public')
                     ->boolean(),
-                IconEntry::make('is_application_open')
+                IconEntry::make('application_open')
                     ->boolean(),
                 TextEntry::make('school_year'),
-                TextEntry::make('type'),
+                TextEntry::make('exam_type'),
+                IconEntry::make('is_results_published')
+                    ->boolean(),
+                TextEntry::make('application_start_date')
+                    ->date(),
+                TextEntry::make('application_end_date')
+                    ->date(),
+                TextEntry::make('results_published_at')
+                    ->dateTime(),
+                TextEntry::make('results_release_at')
+                    ->date(),
                 TextEntry::make('created_at')
                     ->dateTime(),
                 TextEntry::make('updated_at')

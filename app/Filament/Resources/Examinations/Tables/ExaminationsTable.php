@@ -31,7 +31,7 @@ class ExaminationsTable
                     ->sortable()
                     ->weight('medium')
                     ->description(fn (Examination $record): string =>
-                        $record->school_year . ' - ' . ucfirst($record->type)
+                        $record->school_year . ' - ' . ucfirst($record->exam_type)
                     ),
 
                 ColumnGroup::make('Schedule', [
@@ -44,11 +44,11 @@ class ExaminationsTable
                 ])->alignment(Alignment::Center),
 
                 ColumnGroup::make('Status', [
-                    IconColumn::make('is_published')
+                    IconColumn::make('is_public')
                         ->label('Visible')
                         ->boolean()
                         ->tooltip(fn ($state) => $state ? 'Exam is visible to students' : 'Exam is hidden from students'),
-                    IconColumn::make('is_application_open')
+                    IconColumn::make('application_open')
                         ->label('Accepting Applications')
                         ->boolean()
                         ->tooltip(fn ($state) => $state ? 'Students can submit applications' : 'Applications are closed'),
@@ -124,7 +124,7 @@ class ExaminationsTable
                 TextColumn::make('school_year')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('type')
+                TextColumn::make('exam_type')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
@@ -164,21 +164,21 @@ class ExaminationsTable
                             : null
                     )
                     ->schema([
-                        Toggle::make('is_published')
+                        Toggle::make('is_public')
                             ->label('Published')
                             ->helperText('Make exam visible to students')
                             ->required()
                             ->inline(false),
 
-                        Toggle::make('is_application_open')
+                        Toggle::make('application_open')
                             ->label('Application Open')
                             ->helperText('Allow students to submit applications')
                             ->required()
                             ->inline(false),
                     ])
                     ->fillForm(fn (Examination $record): array => [
-                        'is_published' => $record->is_published,
-                        'is_application_open' => $record->is_application_open,
+                        'is_public' => $record->is_public,
+                        'application_open' => $record->application_open,
                     ])
                     ->action(function (Examination $record, array $data): void {
                         $record->update($data);

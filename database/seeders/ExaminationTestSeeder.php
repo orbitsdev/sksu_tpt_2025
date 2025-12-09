@@ -26,10 +26,12 @@ class ExaminationTestSeeder extends Seeder
                 'start_date' => now()->addDays(7),
                 'end_date' => now()->addDays(10),
                 'school_year' => '2025-2026',
-                'type' => 'College Admission',
-                'is_published' => true,
-                'is_application_open' => true,
-                'show_result' => false,
+                'exam_type' => 'College Admission',
+                'is_public' => true,
+                'application_open' => true,
+                'is_results_published' => false,
+                'application_start_date' => now(),
+                'application_end_date' => now()->addDays(6),
             ]);
 
             // 🏢 2️⃣ Use existing test centers (or create if needed)

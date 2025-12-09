@@ -1,6 +1,7 @@
 <?php
 namespace App\Traits\Models;
 
+use App\Models\User;
 use App\Models\Program;
 use App\Models\TestCenter;
 
@@ -12,5 +13,10 @@ trait CampusRelations {
 
     public function testCenters(){
         return $this->hasMany(TestCenter::class);
+    }
+
+
+    public function users(){
+        return $this->hasMany(User::class);
     }
 }

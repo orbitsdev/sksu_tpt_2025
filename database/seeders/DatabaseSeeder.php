@@ -10,11 +10,12 @@ use Illuminate\Database\Seeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\CampusSeeder;
 use Database\Seeders\ProgramSeeder;
+use Database\Seeders\TestCenterSeeder;
 use Database\Seeders\ExaminationSeeder;
+use Database\Seeders\SystemSettingSeeder;
 use Database\Seeders\DefaultAccountSeeder;
 use Database\Seeders\ExaminationTestSeeder;
 use Database\Seeders\PersonalInformationSeeder;
-use Database\Seeders\TestCenterSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -24,11 +25,12 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            SystemSettingSeeder::class,
+            CampusSeeder::class,
             RoleSeeder::class,
-             DefaultAccountSeeder::class,
+            DefaultAccountSeeder::class,
             // AdminAccountSeeder::class,
             PersonalInformationSeeder::class,
-            CampusSeeder::class,
             ProgramSeeder::class,
             ExaminationSeeder::class,
             TestCenterSeeder::class,

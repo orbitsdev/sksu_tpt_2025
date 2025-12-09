@@ -68,7 +68,7 @@
                     </div>
                     <div>
                         <label class="text-sm font-medium text-neutral-500 dark:text-neutral-400">Type</label>
-                        <p class="mt-1 text-base font-semibold text-zinc-900 dark:text-white">{{ ucfirst($application->examination->type) }}</p>
+                        <p class="mt-1 text-base font-semibold text-zinc-900 dark:text-white">{{ ucfirst($application->examination->exam_type) }}</p>
                     </div>
                     <div>
                         <label class="text-sm font-medium text-neutral-500 dark:text-neutral-400">Examination Date</label>

@@ -11,12 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('examination_rooms', function (Blueprint $table) {
+        Schema::create('system_settings', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('examination_slot_id')
-                ->constrained()
-                ->onDelete('cascade');
-            $table->string('room_number')->comment('e.g. Room 1, Room 2, Annex A');
+            $table->string('name');
+            $table->string('value')->nullable();
             $table->timestamps();
         });
     }
@@ -26,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('examination_rooms');
+        Schema::dropIfExists('system_settings');
     }
 };

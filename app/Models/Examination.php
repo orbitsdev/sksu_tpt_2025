@@ -13,18 +13,29 @@ class Examination extends Model
         'title',
         'start_date',
         'end_date',
-        'is_published',
-        'is_application_open',
-        'show_result',
+        'is_public',
+        'application_open',
         'school_year',
-        'type',
+        'exam_type',
+        'is_results_published',
+        'application_start_date',
+        'application_end_date',
+        'results_published_at',
+        'results_release_at',
     ];
 
-    protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
-        'is_published' => 'boolean',
-        'is_application_open' => 'boolean',
-        'show_result' => 'boolean',
-    ];
+   protected $casts = [
+    'is_public' => 'boolean',
+    'application_open' => 'boolean',
+    'is_results_published' => 'boolean',
+
+    'start_date' => 'date',
+    'end_date' => 'date',
+    'application_start_date' => 'date',
+    'application_end_date' => 'date',
+'results_published_at' => 'datetime',
+'results_release_at' => 'date',
+
+];
+
 }

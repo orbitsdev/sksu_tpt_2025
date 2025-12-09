@@ -11,16 +11,21 @@ class ExaminationRoom extends Model
 {
     use ExaminationRoomRelations;
 
-    protected $fillable = [
+     protected $fillable = [
         'examination_slot_id',
         'room_number',
     ];
 
-    protected $appends = ['capacity', 'occupied', 'available'];
+    protected $appends = [
+        'capacity',
+        'occupied',
+        'available',
+        'is_full',
+    ];
 
     /**
-     * Computed: Room capacity based on slot's total examinees divided by number of rooms
-     * This ensures capacity is always accurate and never outdated
+     * Computed capacity:
+     * total_examinees / number_of_rooms
      */
     public function getCapacityAttribute(): int
     {
@@ -28,14 +33,18 @@ class ExaminationRoom extends Model
             return 0;
         }
 
-        return (int) ceil(
-            $this->examinationSlot->total_examinees / $this->examinationSlot->number_of_rooms
-        );
+        $slot = $this->examinationSlot;
+
+        if ($slot->number_of_rooms <= 0) {
+            return 0;
+        }
+
+        return (int) ceil($slot->total_examinees / $slot->number_of_rooms);
     }
 
     /**
-     * Computed: Number of examinees currently assigned to this room
-     * Counts from application_slots (single source of truth)
+     * Computed occupancy:
+     * Number of examinees assigned to this room
      */
     public function getOccupiedAttribute(): int
     {
@@ -43,7 +52,7 @@ class ExaminationRoom extends Model
     }
 
     /**
-     * Computed: Available slots in this room
+     * Computed availability:
      */
     public function getAvailableAttribute(): int
     {
@@ -51,9 +60,9 @@ class ExaminationRoom extends Model
     }
 
     /**
-     * Check if room is full
+     * Quick check if room is full
      */
-    public function isFull(): bool
+    public function getIsFullAttribute(): bool
     {
         return $this->occupied >= $this->capacity;
     }

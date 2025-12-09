@@ -113,7 +113,7 @@
                                     </div>
                                     <div>
                                         <span class="text-neutral-500">Type:</span>
-                                        <span class="ml-1 font-medium">{{ ucfirst($exam->type) }}</span>
+                                        <span class="ml-1 font-medium">{{ ucfirst($exam->exam_type) }}</span>
                                     </div>
                                     <div>
                                         <span class="text-neutral-500">Exam Date:</span>

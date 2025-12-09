@@ -5,7 +5,8 @@ use App\Models\ExaminationRoom;
 use App\Models\ExaminationSlot;
 
 trait ApplicationSlotRelations {
-     public function application()
+
+    public function application()
     {
         return $this->belongsTo(Application::class);
     }

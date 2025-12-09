@@ -14,7 +14,6 @@ class ExaminationSlot extends Model
         'test_center_id',
         'building_name',
         'date_of_exam',
-        'total_examinees',
         'number_of_rooms',
         'is_active',
     ];
@@ -24,10 +23,15 @@ class ExaminationSlot extends Model
         'is_active' => 'boolean',
     ];
 
-    // helpers
-    public function getTotalCapacityAttribute()
+
+     public function getTotalCapacityAttribute()
     {
         return $this->rooms->sum('capacity');
+    }
+
+    public function getTotalOccupiedAttribute()
+    {
+        return $this->rooms->sum('occupied');
     }
 
     public function getAvailableAttribute()
@@ -35,13 +39,14 @@ class ExaminationSlot extends Model
         return $this->total_capacity - $this->total_occupied;
     }
 
-    public function hasAssignedStudents(): bool
-    {
-        return $this->rooms()->whereHas('applicationSlots')->exists();
-    }
-
     public function getAssignedStudentsCountAttribute(): int
     {
         return $this->applicationSlots()->count();
     }
+
+    public function hasAssignedStudents(): bool
+    {
+        return $this->rooms()->whereHas('applicationSlots')->exists();
+    }
+    
 }

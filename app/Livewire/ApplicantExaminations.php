@@ -53,15 +53,15 @@ class ApplicantExaminations extends Component
             ->pluck('examination_id')
             ->toArray();
 
-        $query = Examination::where('is_published', true)
+        $query = Examination::where('is_public', true)
             ->with(['examinationSlots.rooms'])
             ->withCount(['examinationSlots', 'applications']);
 
         // Apply filter
         if ($this->filterType === 'active') {
-            $query->where('is_application_open', true);
+            $query->where('application_open', true);
         } elseif ($this->filterType === 'upcoming') {
-            $query->where('is_application_open', false);
+            $query->where('application_open', false);
         }
 
         $examinations = $query->latest()->paginate(10);
@@ -79,9 +79,9 @@ class ApplicantExaminations extends Component
 
         // Get counts for filter buttons
         $filterCounts = [
-            'all' => Examination::where('is_published', true)->count(),
-            'active' => Examination::where('is_published', true)->where('is_application_open', true)->count(),
-            'upcoming' => Examination::where('is_published', true)->where('is_application_open', false)->count(),
+            'all' => Examination::where('is_public', true)->count(),
+            'active' => Examination::where('is_public', true)->where('application_open', true)->count(),
+            'upcoming' => Examination::where('is_public', true)->where('application_open', false)->count(),
         ];
 
         return view('livewire.applicant-examinations', [

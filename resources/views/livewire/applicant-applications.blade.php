@@ -62,7 +62,7 @@
                                     </div>
                                     <div>
                                         <span class="text-neutral-500 dark:text-neutral-400">Type:</span>
-                                        <span class="ml-1 font-medium">{{ ucfirst($application->examination->type) }}</span>
+                                        <span class="ml-1 font-medium">{{ ucfirst($application->examination->exam_type) }}</span>
                                     </div>
                                     <div>
                                         <span class="text-neutral-500 dark:text-neutral-400">Applied:</span>

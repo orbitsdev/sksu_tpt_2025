@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('abbreviation')->nullable();
             $table->string('code')->nullable();
-            $table->boolean('is_offered')->nullable();
+            $table->boolean('is_offered')->default(true);
             $table->timestamps();
         });
     }

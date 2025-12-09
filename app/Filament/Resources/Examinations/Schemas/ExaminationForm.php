@@ -22,7 +22,7 @@ class ExaminationForm
                     ->maxLength(255)
                     ->placeholder('e.g., First Semester Entrance Exam 2025'),
 
-                Select::make('type')
+                Select::make('exam_type')
                     ->label('Type')
                     ->options([
                         'Entrance' => 'Entrance',

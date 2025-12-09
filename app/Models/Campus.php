@@ -2,10 +2,9 @@
 
 namespace App\Models;
 
-use App\Models\Program;
-use App\Models\ExaminationSlot;
-use Illuminate\Database\Eloquent\Model;
+
 use App\Traits\Models\CampusRelations;
+use Illuminate\Database\Eloquent\Model;
 
 class Campus extends Model
 {
@@ -14,6 +13,8 @@ class Campus extends Model
     protected $fillable = [
         'name',
         'type',
-        'address',
+        'contact_email',
+        'contact_number',
     ];
+
 }

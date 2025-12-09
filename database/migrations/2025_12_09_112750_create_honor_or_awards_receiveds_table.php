@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('examination_rooms', function (Blueprint $table) {
+        Schema::create('honor_or_awards_receiveds', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('examination_slot_id')
+              $table->foreignId('application_id')
                 ->constrained()
                 ->onDelete('cascade');
-            $table->string('room_number')->comment('e.g. Room 1, Room 2, Annex A');
+
+            $table->string('title')->comment('Award or honor title');
             $table->timestamps();
         });
     }
@@ -26,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('examination_rooms');
+        Schema::dropIfExists('honor_or_awards_receiveds');
     }
 };

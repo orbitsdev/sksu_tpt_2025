@@ -9,10 +9,7 @@ trait ExaminationRoomRelations{
         return $this->belongsTo(ExaminationSlot::class, 'examination_slot_id');
     }
 
-    public function slot()
-    {
-        return $this->belongsTo(ExaminationSlot::class, 'examination_slot_id');
-    }
+    
 
     public function applicationSlots()
     {

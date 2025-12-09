@@ -15,7 +15,6 @@ class PersonalInformation extends Model
         'middle_name',
         'last_name',
         'suffix',
-        'nickname',
         'sex',
         'birth_date',
         'birth_place',
@@ -36,4 +35,15 @@ class PersonalInformation extends Model
     protected $casts = [
         'birth_date' => 'date',
     ];
+
+
+    public function getFullAddressAttribute()
+    {
+        return trim("{$this->house_no} {$this->street}, {$this->barangay}, {$this->municipality}, {$this->province}, {$this->zip_code}");
+    }
+
+    public function getAgeAttribute()
+    {
+        return $this->birth_date ? $this->birth_date->age : null;
+    }
 }

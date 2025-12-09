@@ -14,16 +14,14 @@ return new class extends Migration
         Schema::create('personal_information', function (Blueprint $table) {
             $table->id();
              $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
-
             // Identity
             $table->string('first_name');
             $table->string('middle_name')->nullable();
             $table->string('last_name');
             $table->string('suffix', 10)->nullable();
-            $table->string('nickname')->nullable();
 
             // Demographics
-            $table->enum('sex', ['Male', 'Female', 'Other'])->nullable();
+            $table->enum('sex', ['Male', 'Female'])->nullable();
             $table->date('birth_date')->nullable();
             $table->string('birth_place')->nullable();
             $table->string('civil_status')->nullable();

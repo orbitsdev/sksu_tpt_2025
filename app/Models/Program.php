@@ -13,7 +13,8 @@ class Program extends Model
     protected $fillable = [
         'campus_id',
         'name',
-        'description',
+        'abbreviation',
+        'code',
         'is_offered',
     ];
 

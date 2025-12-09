@@ -20,6 +20,7 @@ class DefaultAccountSeeder extends Seeder
             [
                 'name' => 'Admin User',
                 'password' => Hash::make('password'),
+                'campus_id' => 1
             ]
         );
         $admin->assignRole('admin');
@@ -46,6 +47,7 @@ class DefaultAccountSeeder extends Seeder
             [
                 'name' => 'Applicant User',
                 'password' => Hash::make('password'),
+                'campus_id' => 1
             ]
         );
         $student->assignRole('student');
