@@ -17,29 +17,25 @@ class PersonalInformation extends Model
         'suffix',
         'sex',
         'birth_date',
-        'birth_place',
-        'civil_status',
-        'nationality',
-        'religion',
         'email',
         'contact_number',
-        'house_no',
-        'street',
-        'barangay',
-        'municipality',
-        'province',
-        'region',
-        'zip_code',
     ];
 
     protected $casts = [
         'birth_date' => 'date',
     ];
 
-
-    public function getFullAddressAttribute()
+    public function getFullNameAttribute()
     {
-        return trim("{$this->house_no} {$this->street}, {$this->barangay}, {$this->municipality}, {$this->province}, {$this->zip_code}");
+        $name = "{$this->first_name}";
+        if ($this->middle_name) {
+            $name .= " {$this->middle_name}";
+        }
+        $name .= " {$this->last_name}";
+        if ($this->suffix) {
+            $name .= " {$this->suffix}";
+        }
+        return trim($name);
     }
 
     public function getAgeAttribute()

@@ -20,56 +20,42 @@ class PersonalInformationTable
             ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('user', fn (Builder $query) => $query->whereHas('roles', fn (Builder $query) => $query->where('name', 'student')))->latest())
             ->striped()
             ->columns([
-                TextColumn::make('user.email')->searchable(),
+                TextColumn::make('user.email')
+                    ->label('User Email')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('first_name')
-                    ->searchable()->label('Email'),
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('middle_name')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('last_name')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('suffix')
-                    ->searchable(),
-                TextColumn::make('nickname')
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('sex'),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('sex')
+                    ->sortable(),
                 TextColumn::make('birth_date')
                     ->date()
                     ->sortable(),
-                TextColumn::make('birth_place')
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('civil_status')
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('nationality')
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('religion')
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('email')
-                    ->label('Email address')
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
+                    ->label('Email Address')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('contact_number')
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('house_no')
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('street')
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('barangay')
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('municipality')
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('province')
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('region')
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('zip_code')
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
+                    ->label('Contact Number')
+                    ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true)->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true)->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //

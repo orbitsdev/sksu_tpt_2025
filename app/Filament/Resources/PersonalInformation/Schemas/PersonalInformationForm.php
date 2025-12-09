@@ -68,10 +68,6 @@ class PersonalInformationForm
 
                                 Section::make('Personal Details')
                                     ->schema([
-                                        TextInput::make('nickname')
-                                            ->label('Nickname')
-                                            ->maxLength(255),
-
                                         Select::make('sex')
                                             ->label('Sex')
                                             ->options([
@@ -87,35 +83,8 @@ class PersonalInformationForm
                                             ->maxDate(today())
                                             ->native(false)
                                             ->displayFormat('M d, Y'),
-
-                                        TextInput::make('birth_place')
-                                            ->label('Birth Place')
-                                            ->maxLength(255)
-                                            ->placeholder('City, Province'),
-
-                                        Select::make('civil_status')
-                                            ->label('Civil Status')
-                                            ->options([
-                                                'Single' => 'Single',
-                                                'Married' => 'Married',
-                                                'Widowed' => 'Widowed',
-                                                'Divorced' => 'Divorced',
-                                                'Separated' => 'Separated',
-                                            ])
-                                            ->required()
-                                            ->native(false),
-
-                                        TextInput::make('nationality')
-                                            ->label('Nationality')
-                                            ->default('Filipino')
-                                            ->required()
-                                            ->maxLength(255),
-
-                                        TextInput::make('religion')
-                                            ->label('Religion')
-                                            ->maxLength(255),
                                     ])
-                                    ->columns(3),
+                                    ->columns(2),
                             ]),
 
                         Tab::make('Contact Information')
@@ -138,44 +107,6 @@ class PersonalInformationForm
                                             ->placeholder('09XX-XXX-XXXX'),
                                     ])
                                     ->columns(2),
-
-                                Section::make('Address')
-                                    ->schema([
-                                        TextInput::make('house_no')
-                                            ->label('House No.')
-                                            ->maxLength(50),
-
-                                        TextInput::make('street')
-                                            ->label('Street')
-                                            ->maxLength(255),
-
-                                        TextInput::make('barangay')
-                                            ->label('Barangay')
-                                            ->required()
-                                            ->maxLength(255),
-
-                                        TextInput::make('municipality')
-                                            ->label('Municipality/City')
-                                            ->required()
-                                            ->maxLength(255),
-
-                                        TextInput::make('province')
-                                            ->label('Province')
-                                            ->required()
-                                            ->maxLength(255),
-
-                                        TextInput::make('region')
-                                            ->label('Region')
-                                            ->required()
-                                            ->maxLength(255)
-                                            ->placeholder('e.g., Region XII'),
-
-                                        TextInput::make('zip_code')
-                                            ->label('ZIP Code')
-                                            ->mask('9999')
-                                            ->placeholder('XXXX'),
-                                    ])
-                                    ->columns(3),
                             ]),
                     ])
                     ->columnSpanFull()
