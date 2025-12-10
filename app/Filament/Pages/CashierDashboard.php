@@ -30,7 +30,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Wizard;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -142,52 +142,35 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                     ])
             )
             ->columns([
-                SpatieMediaLibraryImageColumn::make('application.photo')
+                ImageColumn::make('photo')
                     ->label('')
-                    ->collection('photo')
                     ->circular()
-                    ->size(40)
-                    ->defaultImageUrl(url('/images/default-avatar.png')),
+                    ->width(40)
+                    ->height(40)
+                    ->getStateUsing(function (Payment $record) {
+                        if (!$record->application) {
+                            return null;
+                        }
+                        $media = $record->application->getFirstMedia('photo');
+                        return $media ? $media->getUrl() : null;
+                    })
+                    ->defaultImageUrl('https://ui-avatars.com/api/?name=User&color=7F9CF5&background=EBF4FF')
+                    ->url(fn (Payment $record): ?string =>
+                        $record->application?->getFirstMedia('photo')?->getUrl()
+                    )
+                    ->openUrlInNewTab(),
 
                 TextColumn::make('applicant.name')
                     ->label('Applicant Name')
                     ->searchable()
                     ->sortable()
-                    ->weight('medium')
-                    ->description(fn (Payment $record): string =>
-                        ($record->application?->applicationInformation?->type ?? 'Unknown') . ' • ' .
-                        ($record->application?->firstPriorityProgram?->name ?? 'No Program')
-                    ),
-
-                TextColumn::make('application.examinee_number')
-                    ->label('Examinee No.')
-                    ->searchable()
-                    ->sortable()
-                    ->copyable()
-                    ->weight('bold')
-                    ->placeholder('Not Assigned')
-                    ->description('Click to copy'),
-
-                TextColumn::make('application.permit_number')
-                    ->label('Permit No.')
-                    ->searchable()
-                    ->copyable()
-                    ->placeholder('Not Issued')
-                    ->toggleable()
-                    ->color(fn ($state) => $state ? 'success' : 'gray'),
+                    ->weight('medium'),
 
                 TextColumn::make('amount')
                     ->label('Amount')
                     ->money('PHP')
                     ->sortable()
                     ->weight('medium'),
-
-                TextColumn::make('payment_reference')
-                    ->label('Payment Ref')
-                    ->searchable()
-                    ->placeholder('No Reference')
-                    ->copyable()
-                    ->toggleable(isToggledHiddenByDefault: true),
 
                 BadgeColumn::make('status')
                     ->label('Status')
@@ -205,11 +188,24 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                 TextColumn::make('created_at')
                     ->label('Submitted')
                     ->dateTime('M d, Y g:i A')
+                    ->sortable(),
+
+                // Toggleable columns (hidden by default to save space)
+                TextColumn::make('application.examinee_number')
+                    ->label('Examinee No.')
+                    ->searchable()
                     ->sortable()
-                    ->since()
-                    ->description(fn (Payment $record) =>
-                        $record->created_at?->format('M d, Y g:i A')
-                    ),
+                    ->copyable()
+                    ->weight('bold')
+                    ->placeholder('Not Assigned')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('payment_reference')
+                    ->label('Payment Ref')
+                    ->searchable()
+                    ->placeholder('No Reference')
+                    ->copyable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('status')

@@ -41,7 +41,7 @@
             </div>
         </div>
 
-        <!-- Contact & Address -->
+        <!-- Contact Information -->
         <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200">
             <div>
                 <div class="text-[10px] text-slate-500">Contact Number</div>
@@ -53,10 +53,21 @@
             </div>
         </div>
 
-        @if($info?->present_address)
-            <div class="pt-2 border-t border-slate-200">
-                <div class="text-[10px] text-slate-500">Present Address</div>
-                <div class="font-medium text-slate-800">{{ $info->present_address }}</div>
+        <!-- Address Information -->
+        @if($info?->present_address || $info?->permanent_address)
+            <div class="pt-2 border-t border-slate-200 space-y-2">
+                @if($info?->present_address)
+                    <div>
+                        <div class="text-[10px] text-slate-500">Present Address</div>
+                        <div class="font-medium text-slate-800 text-[11px]">{{ $info->present_address }}</div>
+                    </div>
+                @endif
+                @if($info?->permanent_address)
+                    <div>
+                        <div class="text-[10px] text-slate-500">Permanent Address</div>
+                        <div class="font-medium text-slate-800 text-[11px]">{{ $info->permanent_address }}</div>
+                    </div>
+                @endif
             </div>
         @endif
     </div>
