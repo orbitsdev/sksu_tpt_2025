@@ -73,7 +73,7 @@
                             Total collected (today)
                         </div>
                         <div class="mt-1 flex items-baseline gap-2">
-                            <div class="text-2xl font-semibold text-slate-900">₱{{ number_format($this->totalCollectedToday, 2) }}</div>
+                            <div class="text-2xl font-semibold text-slate-900">₱{{ number_format((float)$this->totalCollectedToday, 2) }}</div>
                             <span class="text-[11px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full">
                                 Summary report
                             </span>
