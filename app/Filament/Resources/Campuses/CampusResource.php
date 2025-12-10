@@ -25,9 +25,9 @@ class CampusResource extends Resource
 }
     protected static ?string $model = Campus::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::BuildingLibrary;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::BuildingOffice;
 
-    protected static ?string $recordTitleAttribute = 'Campus';
+    protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Schema $schema): Schema
     {

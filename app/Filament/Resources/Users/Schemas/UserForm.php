@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
-use App\Models\Campus;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -46,7 +46,7 @@ class UserForm
 
                                         Select::make('campus_id')
                                             ->label('Campus')
-                                            ->options(Campus::pluck('name', 'id'))
+                                            ->relationship('campus', 'name')
                                             ->searchable()
                                             ->preload()
                                             ->nullable(),
@@ -92,14 +92,13 @@ class UserForm
                                 Section::make('Personal Details')
                                     ->relationship('personalInformation')
                                     ->schema([
-                                        Select::make('sex')
-                                            ->label('Sex')
+
+                                        ToggleButtons::make('sex')
+                                        ->inline()
                                             ->options([
                                                 'Male' => 'Male',
                                                 'Female' => 'Female',
-                                            ])
-                                            ->required()
-                                            ->native(false),
+                                            ]),
 
                                         DatePicker::make('birth_date')
                                             ->label('Birth Date')
@@ -122,9 +121,10 @@ class UserForm
 
                                         TextInput::make('contact_number')
                                             ->label('Contact Number')
-                                            ->tel()
+                                            ->mask('99999999999')
+                                            ->length(11)
                                             ->required()
-                                            ->maxLength(20)
+
                                             ->placeholder('09XX-XXX-XXXX'),
                                     ])
                                     ->columns(2),

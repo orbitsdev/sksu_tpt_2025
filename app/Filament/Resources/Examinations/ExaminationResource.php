@@ -29,9 +29,9 @@ protected static string | UnitEnum | null $navigationGroup = 'Management';
 }
     protected static ?string $model = Examination::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::Pencil;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::DocumentText;
 
-    protected static ?string $recordTitleAttribute = 'Examination';
+    protected static ?string $recordTitleAttribute = 'title';
 
     protected static bool $canCreateAnother = false;
 
