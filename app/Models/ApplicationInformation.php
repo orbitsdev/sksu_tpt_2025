@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\Models\ApplicationInformationRelations;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class ApplicationInformation extends Model
+class ApplicationInformation extends Model implements HasMedia
 {
     use ApplicationInformationRelations;
+    use InteractsWithMedia;
     protected $fillable = [
         'application_id',
         'type',
@@ -52,5 +55,18 @@ class ApplicationInformation extends Model
         ]);
 
         return implode(' ', $parts);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Media Library
+    |--------------------------------------------------------------------------
+    */
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('photo')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/jpg']);
     }
 }

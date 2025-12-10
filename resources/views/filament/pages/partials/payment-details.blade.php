@@ -4,28 +4,99 @@
     $applicant = $application?->user; // Use application's user relationship
     $info = $application?->applicationInformation;
     $slot = $application?->applicationSlot;
+    $photo = $info?->getFirstMediaUrl('photo');
 @endphp
 
 <div class="p-4 space-y-4 text-xs">
-    <!-- Applicant block -->
-    <div class="rounded-xl border border-slate-100 bg-slate-50/80 p-3 space-y-1">
+    <!-- Applicant block with photo -->
+    <div class="rounded-xl border border-slate-100 bg-slate-50/80 p-3 space-y-2">
         <div class="text-[11px] uppercase text-slate-500 font-medium">
             Applicant Information
         </div>
-        <div class="flex items-center justify-between">
-            <div>
+
+        <div class="flex gap-3">
+            <!-- Photo -->
+            @if($photo)
+                <img src="{{ $photo }}" alt="Applicant Photo" class="w-20 h-20 rounded-lg object-cover border border-slate-200">
+            @else
+                <div class="w-20 h-20 rounded-lg bg-slate-200 flex items-center justify-center border border-slate-300">
+                    <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+            @endif
+
+            <!-- Basic Info -->
+            <div class="flex-1">
                 <div class="text-sm font-semibold text-slate-900">
-                    {{ $applicant?->name ?? 'Unknown' }}
+                    {{ $info?->full_name ?? $applicant?->name ?? 'Unknown' }}
                 </div>
                 <div class="text-[11px] text-slate-500">
-                    {{ $info?->applicant_type ?? 'N/A' }} · {{ $application?->firstPriorityProgram?->name ?? 'N/A' }}
+                    {{ $info?->type ?? 'N/A' }} · {{ $application?->firstPriorityProgram?->code ?? 'N/A' }}
+                </div>
+                <div class="text-[11px] text-slate-500 mt-1">
+                    <span class="font-medium">DOB:</span> {{ $info?->date_of_birth?->format('M d, Y') ?? 'N/A' }} ·
+                    <span class="font-medium">Sex:</span> {{ $info?->sex ?? 'N/A' }}
                 </div>
             </div>
-            <div class="text-right text-[10px] text-slate-500">
-                Contact:
-                <div class="font-medium text-slate-800">
-                    {{ $info?->contact_number ?? 'N/A' }}
+        </div>
+
+        <!-- Contact & Address -->
+        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200">
+            <div>
+                <div class="text-[10px] text-slate-500">Contact Number</div>
+                <div class="font-medium text-slate-800">{{ $info?->contact_number ?? 'N/A' }}</div>
+            </div>
+            <div>
+                <div class="text-[10px] text-slate-500">Email</div>
+                <div class="font-medium text-slate-800">{{ $applicant?->email ?? 'N/A' }}</div>
+            </div>
+        </div>
+
+        @if($info?->present_address)
+            <div class="pt-2 border-t border-slate-200">
+                <div class="text-[10px] text-slate-500">Present Address</div>
+                <div class="font-medium text-slate-800">{{ $info->present_address }}</div>
+            </div>
+        @endif
+    </div>
+
+    <!-- Educational Background -->
+    <div class="rounded-xl border border-slate-100 p-3 space-y-2">
+        <div class="text-[11px] uppercase text-slate-500 font-medium">
+            Educational Background
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+            <div>
+                <div class="text-[10px] text-slate-500">School Graduated</div>
+                <div class="font-medium text-slate-800">{{ $info?->school_graduated ?? 'N/A' }}</div>
+            </div>
+            <div>
+                <div class="text-[10px] text-slate-500">Year Graduated</div>
+                <div class="font-medium text-slate-800">{{ $info?->year_graduated ?? 'N/A' }}</div>
+            </div>
+            @if($info?->track_and_strand_taken)
+                <div class="col-span-2">
+                    <div class="text-[10px] text-slate-500">Track & Strand</div>
+                    <div class="font-medium text-slate-800">{{ $info->track_and_strand_taken }}</div>
                 </div>
+            @endif
+        </div>
+    </div>
+
+    <!-- Program Choices -->
+    <div class="rounded-xl border border-slate-100 p-3 space-y-2">
+        <div class="text-[11px] uppercase text-slate-500 font-medium">
+            Program Choices
+        </div>
+        <div class="space-y-1">
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] text-slate-500">1st Priority:</span>
+                <span class="font-medium text-slate-800">{{ $application?->firstPriorityProgram?->name ?? 'N/A' }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] text-slate-500">2nd Priority:</span>
+                <span class="font-medium text-slate-800">{{ $application?->secondPriorityProgram?->name ?? 'N/A' }}</span>
             </div>
         </div>
     </div>
@@ -106,12 +177,12 @@
         </div>
 
         <!-- Receipt image -->
-        @if($payment->receipt_file)
+        @if($payment->getFirstMediaUrl('receipt'))
             <div class="mt-2">
                 <div class="text-[11px] text-slate-500 mb-1">
                     Proof of Payment
                 </div>
-                <img src="{{ Storage::url($payment->receipt_file) }}" alt="Receipt" class="w-full rounded-xl border border-slate-200">
+                <img src="{{ $payment->getFirstMediaUrl('receipt') }}" alt="Receipt" class="w-full rounded-xl border border-slate-200">
             </div>
         @else
             <div class="mt-2">

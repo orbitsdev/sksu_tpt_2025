@@ -14,6 +14,13 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
+use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Table;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
 use Filament\Pages\Page;
 use Filament\Notifications\Notification;
 use UnitEnum;
@@ -28,15 +35,15 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\Wizard;
 use Livewire\Attributes\Computed;
-use Livewire\WithPagination;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Builder;
 
-class CashierDashboard extends Page implements HasForms, HasActions
+class CashierDashboard extends Page implements HasForms, HasActions, HasTable
 {
     use InteractsWithForms;
     use InteractsWithActions;
-    use WithPagination;
+    use InteractsWithTable;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-banknotes';
 
@@ -46,10 +53,6 @@ class CashierDashboard extends Page implements HasForms, HasActions
 
     protected static ?int $navigationSort = 1;
 
-    // Livewire properties
-    public string $search = '';
-    public string $filter = 'today'; // all, today, week
-
     public static function getNavigationLabel(): string
     {
         return 'Cashier Transaction';
@@ -58,24 +61,6 @@ class CashierDashboard extends Page implements HasForms, HasActions
     public function getHeading(): string
     {
         return '';
-    }
-
-    public function mount(): void
-    {
-        //
-    }
-
-    // Real-time search
-    public function updatedSearch(): void
-    {
-        $this->resetPage('page');
-    }
-
-    // Filter changes
-    public function setFilter(string $filter): void
-    {
-        $this->filter = $filter;
-        $this->resetPage('page');
     }
 
     // Computed properties for metrics
@@ -111,46 +96,206 @@ class CashierDashboard extends Page implements HasForms, HasActions
             ->sum('amount');
     }
 
-    // Get applications with pending payments
-    #[Computed]
-    public function pendingApplications()
+    // Filament Table
+    public function table(Table $table): Table
     {
-        $query = Application::with([
-            'user',
-            'applicationInformation',
-            'applicationSlot.examinationSlot.examinationRoom.testCenter',
-            'firstPriorityProgram',
-            'payment'
-        ])
-        ->whereHas('payment', function ($q) {
-            $q->where('status', 'PENDING');
-        });
+        return $table
+            ->query(
+                Application::query()
+                    ->with([
+                        'user',
+                        'applicationInformation',
+                        'applicationSlot.examinationSlot.examinationRoom.testCenter',
+                        'firstPriorityProgram',
+                        'payment'
+                    ])
+                    ->whereHas('payment', function ($q) {
+                        $q->where('status', 'PENDING');
+                    })
+            )
+            ->columns([
+                TextColumn::make('examinee_number')
+                    ->label('Examinee No.')
+                    ->searchable()
+                    ->sortable()
+                    ->copyable()
+                    ->weight('bold')
+                    ->placeholder('N/A'),
 
-        // Apply date filter (based on payment created_at)
-        if ($this->filter === 'today') {
-            $query->whereHas('payment', function ($q) {
-                $q->whereDate('created_at', today());
-            });
-        } elseif ($this->filter === 'week') {
-            $query->whereHas('payment', function ($q) {
-                $q->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
-            });
-        }
+                TextColumn::make('user.name')
+                    ->label('Applicant Name')
+                    ->searchable()
+                    ->sortable()
+                    ->description(fn (Application $record): string =>
+                        ($record->applicationInformation?->type ?? 'N/A') . ' • ' .
+                        ($record->firstPriorityProgram?->code ?? 'N/A')
+                    ),
 
-        // Apply search
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->whereHas('user', function ($q) {
-                    $q->where('name', 'like', "%{$this->search}%");
-                })
-                ->orWhere('examinee_number', 'like', "%{$this->search}%")
-                ->orWhereHas('payment', function ($q) {
-                    $q->where('payment_reference', 'like', "%{$this->search}%");
-                });
-            });
-        }
+                TextColumn::make('payment.payment_reference')
+                    ->label('Payment Ref')
+                    ->searchable()
+                    ->placeholder('N/A')
+                    ->copyable(),
 
-        return $query->latest()->paginate(10);
+                TextColumn::make('payment.amount')
+                    ->label('Amount')
+                    ->money('PHP')
+                    ->sortable(),
+
+                BadgeColumn::make('payment.status')
+                    ->label('Status')
+                    ->colors([
+                        'warning' => 'PENDING',
+                        'success' => 'VERIFIED',
+                        'danger' => 'REJECTED',
+                    ])
+                    ->icons([
+                        'heroicon-o-clock' => 'PENDING',
+                        'heroicon-o-check-circle' => 'VERIFIED',
+                        'heroicon-o-x-circle' => 'REJECTED',
+                    ]),
+
+                TextColumn::make('payment.created_at')
+                    ->label('Submitted')
+                    ->dateTime('M d, Y g:i A')
+                    ->sortable()
+                    ->since(),
+            ])
+            ->filters([
+                SelectFilter::make('payment.status')
+                    ->label('Status')
+                    ->options([
+                        'PENDING' => 'Pending',
+                        'VERIFIED' => 'Verified',
+                        'REJECTED' => 'Rejected',
+                    ]),
+
+                Filter::make('created_today')
+                    ->label('Today')
+                    ->query(fn (Builder $query): Builder => $query->whereHas('payment', function ($q) {
+                        $q->whereDate('created_at', today());
+                    })),
+
+                Filter::make('created_this_week')
+                    ->label('This Week')
+                    ->query(fn (Builder $query): Builder => $query->whereHas('payment', function ($q) {
+                        $q->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                    })),
+
+                SelectFilter::make('applicationInformation.type')
+                    ->label('Applicant Type')
+                    ->options([
+                        'Freshmen' => 'Freshmen',
+                        'Transferee' => 'Transferee',
+                    ]),
+            ])
+            ->actions([
+                Action::make('viewAndVerify')
+                    ->label('View / Verify')
+                    ->icon('heroicon-o-eye')
+                    ->button()
+                    ->color('primary')
+                    ->modalHeading(fn (Application $record) => 'Application Details - #' . ($record->examinee_number ?? 'N/A'))
+                    ->modalWidth('4xl')
+                    ->modalContent(fn (Application $record) => view('filament.pages.partials.payment-details', [
+                        'payment' => $record->payment
+                    ]))
+                    ->modalFooterActions(fn (Action $action): array => [
+                        Action::make('reject')
+                            ->label('Reject Payment')
+                            ->icon('heroicon-o-x-circle')
+                            ->color('danger')
+                            ->requiresConfirmation()
+                            ->modalHeading('Reject Payment')
+                            ->modalDescription('Please provide a reason for rejecting this payment.')
+                            ->form([
+                                Textarea::make('reason')
+                                    ->label('Reason for Rejection')
+                                    ->required()
+                                    ->rows(4)
+                                    ->placeholder('E.g., Invalid receipt, mismatched details, unclear payment proof...'),
+                            ])
+                            ->action(function (array $data, Application $record) {
+                                $payment = $record->payment;
+
+                                if (!$payment) {
+                                    Notification::make()
+                                        ->title('Payment not found')
+                                        ->danger()
+                                        ->send();
+                                    return;
+                                }
+
+                                $payment->update([
+                                    'status' => 'REJECTED',
+                                    'verified_by' => auth()->id(),
+                                    'verified_at' => now(),
+                                ]);
+
+                                Notification::make()
+                                    ->title('Payment Rejected')
+                                    ->body('The payment has been rejected. Applicant will be notified.')
+                                    ->warning()
+                                    ->send();
+                            }),
+
+                        Action::make('approve')
+                            ->label('Approve & Generate Permit')
+                            ->icon('heroicon-o-check-circle')
+                            ->color('success')
+                            ->requiresConfirmation()
+                            ->modalHeading('Approve Payment')
+                            ->modalDescription('Are you sure you want to approve this payment and generate the exam permit?')
+                            ->form([
+                                TextInput::make('official_receipt_number')
+                                    ->label('Official Receipt Number')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->unique('payments', 'official_receipt_number'),
+                                Textarea::make('remarks')
+                                    ->label('Cashier Remarks (Optional)')
+                                    ->rows(3)
+                                    ->placeholder('E.g., Valid receipt, name matches ID, clear payment details.'),
+                            ])
+                            ->action(function (array $data, Application $record) {
+                                $payment = $record->payment;
+
+                                if (!$payment) {
+                                    Notification::make()
+                                        ->title('Payment not found')
+                                        ->danger()
+                                        ->send();
+                                    return;
+                                }
+
+                                // Verify payment
+                                $payment->update([
+                                    'official_receipt_number' => $data['official_receipt_number'],
+                                    'verified_by' => auth()->id(),
+                                    'verified_at' => now(),
+                                    'status' => 'VERIFIED',
+                                ]);
+
+                                // Generate permit for application
+                                if ($record && !$record->has_permit) {
+                                    $permitNumber = 'SKSU-' . now()->year . '-' . str_pad($record->id, 6, '0', STR_PAD_LEFT);
+                                    $record->issuePermit($permitNumber);
+                                }
+
+                                Notification::make()
+                                    ->title('Payment Approved!')
+                                    ->body('Exam permit has been generated successfully.')
+                                    ->success()
+                                    ->send();
+                            }),
+                    ])
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->closeModalByClickingAway(false),
+            ])
+            ->defaultSort('payment.created_at', 'desc')
+            ->paginated([10, 25, 50, 100])
+            ->poll('30s');
     }
 
     // Recent approved payments
@@ -161,7 +306,7 @@ class CashierDashboard extends Page implements HasForms, HasActions
             ->where('status', 'VERIFIED')
             ->whereDate('verified_at', today())
             ->latest('verified_at')
-            ->limit(3)
+            ->limit(5)
             ->get();
     }
 
@@ -503,125 +648,5 @@ class CashierDashboard extends Page implements HasForms, HasActions
                         ->send();
                 }
             });
-    }
-
-    // View & Verify Action (Main Modal)
-    public function viewAndVerifyAction(): Action
-    {
-        return Action::make('viewAndVerify')
-            ->label('View / Verify')
-            ->icon('heroicon-o-eye')
-            ->modalHeading(fn (array $arguments) => 'Application Details - #' . (Application::find($arguments['application'])?->examinee_number ?? 'N/A'))
-            ->modalWidth('3xl')
-            ->modalContent(fn (array $arguments) => view('filament.pages.partials.payment-details', [
-                'payment' => Application::with([
-                    'user',
-                    'applicationInformation',
-                    'applicationSlot.examinationSlot.examinationRoom.testCenter',
-                    'firstPriorityProgram',
-                    'payment'
-                ])->find($arguments['application'])?->payment
-            ]))
-            ->modalFooterActions(fn (Action $action): array => [
-                Action::make('reject')
-                    ->label('Reject Payment')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalHeading('Reject Payment')
-                    ->modalDescription('Please provide a reason for rejecting this payment.')
-                    ->form([
-                        Textarea::make('reason')
-                            ->label('Reason for Rejection')
-                            ->required()
-                            ->rows(4)
-                            ->placeholder('E.g., Invalid receipt, mismatched details, unclear payment proof...'),
-                    ])
-                    ->action(function (array $data, array $arguments) {
-                        $application = Application::find($arguments['application']);
-                        $payment = $application?->payment;
-
-                        if (!$payment) {
-                            Notification::make()
-                                ->title('Payment not found')
-                                ->danger()
-                                ->send();
-                            return;
-                        }
-
-                        $payment->update([
-                            'status' => 'REJECTED',
-                            'verified_by' => auth()->id(),
-                            'verified_at' => now(),
-                        ]);
-
-                        Notification::make()
-                            ->title('Payment Rejected')
-                            ->body('The payment has been rejected. Applicant will be notified.')
-                            ->warning()
-                            ->send();
-
-                        // Refresh data
-                        $this->resetPage('page');
-                        unset($this->pendingApplications);
-                    }),
-                Action::make('approve')
-                    ->label('Approve & Generate Permit')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->modalHeading('Approve Payment')
-                    ->modalDescription('Are you sure you want to approve this payment and generate the exam permit?')
-                    ->form([
-                        TextInput::make('official_receipt_number')
-                            ->label('Official Receipt Number')
-                            ->required()
-                            ->maxLength(255)
-                            ->unique('payments', 'official_receipt_number'),
-                        Textarea::make('remarks')
-                            ->label('Cashier Remarks (Optional)')
-                            ->rows(3)
-                            ->placeholder('E.g., Valid receipt, name matches ID, clear payment details.'),
-                    ])
-                    ->action(function (array $data, array $arguments) {
-                        $application = Application::find($arguments['application']);
-                        $payment = $application?->payment;
-
-                        if (!$payment) {
-                            Notification::make()
-                                ->title('Payment not found')
-                                ->danger()
-                                ->send();
-                            return;
-                        }
-
-                        // Verify payment
-                        $payment->update([
-                            'official_receipt_number' => $data['official_receipt_number'],
-                            'verified_by' => auth()->id(),
-                            'verified_at' => now(),
-                            'status' => 'VERIFIED',
-                        ]);
-
-                        // Generate permit for application
-                        if ($application && !$application->has_permit) {
-                            $permitNumber = 'SKSU-' . now()->year . '-' . str_pad($application->id, 6, '0', STR_PAD_LEFT);
-                            $application->issuePermit($permitNumber);
-                        }
-
-                        Notification::make()
-                            ->title('Payment Approved!')
-                            ->body('Exam permit has been generated successfully.')
-                            ->success()
-                            ->send();
-
-                        // Refresh data
-                        $this->resetPage('page');
-                        unset($this->pendingApplications);
-                    }),
-            ])
-            ->modalSubmitAction(false)
-            ->modalCancelActionLabel('Close')
-            ->closeModalByClickingAway(false);
     }
 }
