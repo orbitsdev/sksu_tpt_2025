@@ -25,7 +25,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
-use Filament\Forms\Set;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\Wizard;
 use Livewire\Attributes\Computed;
 use Livewire\WithPagination;
@@ -224,14 +224,25 @@ class CashierDashboard extends Page implements HasForms, HasActions
                                         ->maxLength(255),
                                     TextInput::make('middle_name')
                                         ->label('Middle Name')
+                                        ->required()
                                         ->maxLength(255),
                                     TextInput::make('last_name')
                                         ->label('Last Name')
                                         ->required()
                                         ->maxLength(255),
-                                    TextInput::make('suffix')
-                                        ->label('Suffix (Jr., Sr., III)')
-                                        ->maxLength(20),
+                                    Select::make('suffix')
+                                        ->label('Suffix')
+                                        ->options([
+                                            'Jr.' => 'Jr.',
+                                            'Sr.' => 'Sr.',
+                                            'II' => 'II',
+                                            'III' => 'III',
+                                            'IV' => 'IV',
+                                            'V' => 'V',
+                                        ])
+                                        ->placeholder('Select suffix (optional)')
+                                        ->native(false)
+                                        ->searchable(),
                                     Select::make('sex')
                                         ->label('Sex')
                                         ->required()
@@ -241,6 +252,7 @@ class CashierDashboard extends Page implements HasForms, HasActions
                                         ]),
                                     DatePicker::make('birth_date')
                                         ->label('Date of Birth')
+                                        ->native(false)
                                         ->required()
                                         ->maxDate(now()->subYears(15))
                                         ->displayFormat('F d, Y'),
@@ -250,9 +262,9 @@ class CashierDashboard extends Page implements HasForms, HasActions
                                 ->schema([
                                     TextInput::make('contact_number')
                                         ->label('Contact Number')
-                                        ->tel()
                                         ->required()
-                                        ->maxLength(20),
+                                        ->mask('99999999999')
+                                        ->length(11),
                                     TextInput::make('personal_email')
                                         ->label('Personal Email (Optional)')
                                         ->email()
@@ -290,12 +302,20 @@ class CashierDashboard extends Page implements HasForms, HasActions
                                         ->required()
                                         ->options(Program::where('is_offered', true)->pluck('name', 'id'))
                                         ->searchable()
-                                        ->preload(),
+                                        ->preload()
+                                        ->live(),
                                     Select::make('second_priority_program_id')
-                                        ->label('Second Priority Program (Optional)')
-                                        ->options(Program::where('is_offered', true)->pluck('name', 'id'))
+                                        ->label('Second Priority Program')
+                                        ->required()
+                                        ->options(function (Get $get) {
+                                            $firstPriority = $get('first_priority_program_id');
+                                            return Program::where('is_offered', true)
+                                                ->when($firstPriority, fn($query) => $query->where('id', '!=', $firstPriority))
+                                                ->pluck('name', 'id');
+                                        })
                                         ->searchable()
-                                        ->preload(),
+                                        ->preload()
+                                        ->helperText('Must be different from first priority'),
                                 ]),
                             Section::make('Educational Background')
                                 ->columns(2)
@@ -412,7 +432,7 @@ class CashierDashboard extends Page implements HasForms, HasActions
                         'step' => 1,
                         'step_description' => 'Payment Submitted',
                         'first_priority_program_id' => $data['first_priority_program_id'],
-                        'second_priority_program_id' => $data['second_priority_program_id'] ?? null,
+                        'second_priority_program_id' => $data['second_priority_program_id'],
                     ]);
 
                     // 4. Create Application Information
