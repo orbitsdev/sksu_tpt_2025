@@ -30,6 +30,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Wizard;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -78,30 +79,18 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
     {
         return [
             'all' => Tab::make('All')
-                ->badge(Application::query()->whereHas('payment')->count()),
+                ->badge(Payment::query()->count()),
             'pending' => Tab::make('Pending')
-                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('payment', function ($q) {
-                    $q->where('status', 'PENDING');
-                }))
-                ->badge(Application::query()->whereHas('payment', function ($q) {
-                    $q->where('status', 'PENDING');
-                })->count())
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'PENDING'))
+                ->badge(Payment::where('status', 'PENDING')->count())
                 ->badgeColor('warning'),
             'verified' => Tab::make('Verified')
-                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('payment', function ($q) {
-                    $q->where('status', 'VERIFIED');
-                }))
-                ->badge(Application::query()->whereHas('payment', function ($q) {
-                    $q->where('status', 'VERIFIED');
-                })->count())
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'VERIFIED'))
+                ->badge(Payment::where('status', 'VERIFIED')->count())
                 ->badgeColor('success'),
             'rejected' => Tab::make('Rejected')
-                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('payment', function ($q) {
-                    $q->where('status', 'REJECTED');
-                }))
-                ->badge(Application::query()->whereHas('payment', function ($q) {
-                    $q->where('status', 'REJECTED');
-                })->count())
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'REJECTED'))
+                ->badge(Payment::where('status', 'REJECTED')->count())
                 ->badgeColor('danger'),
         ];
     }
@@ -144,47 +133,63 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
     {
         return $table
             ->query(
-                Application::query()
+                Payment::query()
                     ->with([
-                        'user',
-                        'applicationInformation',
-                        'applicationSlot.examinationSlot.testCenter',
-                        'applicationSlot.examinationRoom.examinationSlot.testCenter',
-                        'firstPriorityProgram',
-                        'payment'
+                        'applicant',
+                        'application.applicationInformation',
+                        'application.firstPriorityProgram',
+                        'application.media'
                     ])
-                    ->whereHas('payment')
             )
             ->columns([
-                TextColumn::make('examinee_number')
+                SpatieMediaLibraryImageColumn::make('application.photo')
+                    ->label('')
+                    ->collection('photo')
+                    ->circular()
+                    ->size(40)
+                    ->defaultImageUrl(url('/images/default-avatar.png')),
+
+                TextColumn::make('applicant.name')
+                    ->label('Applicant Name')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('medium')
+                    ->description(fn (Payment $record): string =>
+                        ($record->application?->applicationInformation?->type ?? 'Unknown') . ' • ' .
+                        ($record->application?->firstPriorityProgram?->name ?? 'No Program')
+                    ),
+
+                TextColumn::make('application.examinee_number')
                     ->label('Examinee No.')
                     ->searchable()
                     ->sortable()
                     ->copyable()
                     ->weight('bold')
-                    ->placeholder('N/A'),
+                    ->placeholder('Not Assigned')
+                    ->description('Click to copy'),
 
-                TextColumn::make('user.name')
-                    ->label('Applicant Name')
+                TextColumn::make('application.permit_number')
+                    ->label('Permit No.')
                     ->searchable()
-                    ->sortable()
-                    ->description(fn (Application $record): string =>
-                        ($record->applicationInformation?->type ?? 'N/A') . ' • ' .
-                        ($record->firstPriorityProgram?->code ?? 'N/A')
-                    ),
+                    ->copyable()
+                    ->placeholder('Not Issued')
+                    ->toggleable()
+                    ->color(fn ($state) => $state ? 'success' : 'gray'),
 
-                TextColumn::make('payment.payment_reference')
-                    ->label('Payment Ref')
-                    ->searchable()
-                    ->placeholder('N/A')
-                    ->copyable(),
-
-                TextColumn::make('payment.amount')
+                TextColumn::make('amount')
                     ->label('Amount')
                     ->money('PHP')
-                    ->sortable(),
+                    ->sortable()
+                    ->weight('medium'),
 
-                BadgeColumn::make('payment.status')
+                TextColumn::make('payment_reference')
+                    ->label('Payment Ref')
+                    ->searchable()
+                    ->placeholder('No Reference')
+                    ->copyable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                BadgeColumn::make('status')
                     ->label('Status')
                     ->colors([
                         'warning' => 'PENDING',
@@ -197,14 +202,17 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                         'heroicon-o-x-circle' => 'REJECTED',
                     ]),
 
-                TextColumn::make('payment.created_at')
+                TextColumn::make('created_at')
                     ->label('Submitted')
                     ->dateTime('M d, Y g:i A')
                     ->sortable()
-                    ->since(),
+                    ->since()
+                    ->description(fn (Payment $record) =>
+                        $record->created_at?->format('M d, Y g:i A')
+                    ),
             ])
             ->filters([
-                SelectFilter::make('payment.status')
+                SelectFilter::make('status')
                     ->label('Status')
                     ->options([
                         'PENDING' => 'Pending',
@@ -214,17 +222,13 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
 
                 Filter::make('created_today')
                     ->label('Today')
-                    ->query(fn (Builder $query): Builder => $query->whereHas('payment', function ($q) {
-                        $q->whereDate('created_at', today());
-                    })),
+                    ->query(fn (Builder $query): Builder => $query->whereDate('created_at', today())),
 
                 Filter::make('created_this_week')
                     ->label('This Week')
-                    ->query(fn (Builder $query): Builder => $query->whereHas('payment', function ($q) {
-                        $q->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
-                    })),
+                    ->query(fn (Builder $query): Builder => $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])),
 
-                SelectFilter::make('applicationInformation.type')
+                SelectFilter::make('application.applicationInformation.type')
                     ->label('Applicant Type')
                     ->options([
                         'Freshmen' => 'Freshmen',
@@ -237,10 +241,10 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                     ->icon('heroicon-o-eye')
                     ->button()
                     ->color('primary')
-                    ->modalHeading(fn (Application $record) => 'Application Details - #' . ($record->examinee_number ?? 'N/A'))
+                    ->modalHeading(fn (Payment $record) => 'Payment Details - #' . ($record->application?->examinee_number ?? 'Not Assigned'))
                     ->modalWidth('4xl')
-                    ->modalContent(fn (Application $record) => view('filament.pages.partials.payment-details', [
-                        'payment' => $record->payment
+                    ->modalContent(fn (Payment $record) => view('filament.pages.partials.payment-details', [
+                        'payment' => $record
                     ]))
                     ->modalFooterActions(fn (Action $action): array => [
                         Action::make('reject')
@@ -257,18 +261,8 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                     ->rows(4)
                                     ->placeholder('E.g., Invalid receipt, mismatched details, unclear payment proof...'),
                             ])
-                            ->action(function (array $data, Application $record) {
-                                $payment = $record->payment;
-
-                                if (!$payment) {
-                                    Notification::make()
-                                        ->title('Payment not found')
-                                        ->danger()
-                                        ->send();
-                                    return;
-                                }
-
-                                $payment->update([
+                            ->action(function (array $data, Payment $record) {
+                                $record->update([
                                     'status' => 'REJECTED',
                                     'verified_by' => auth()->id(),
                                     'verified_at' => now(),
@@ -298,20 +292,10 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                     ->rows(3)
                                     ->placeholder('E.g., Valid receipt, name matches ID, clear payment details.'),
                             ])
-                            ->action(function (array $data, Application $record) {
-                                $payment = $record->payment;
-
-                                if (!$payment) {
-                                    Notification::make()
-                                        ->title('Payment not found')
-                                        ->danger()
-                                        ->send();
-                                    return;
-                                }
-
+                            ->action(function (array $data, Payment $record) {
                                 // Check if OR number already exists
                                 $existingPayment = Payment::where('official_receipt_number', $data['official_receipt_number'])
-                                    ->where('id', '!=', $payment->id)
+                                    ->where('id', '!=', $record->id)
                                     ->first();
 
                                 if ($existingPayment) {
@@ -324,7 +308,7 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                 }
 
                                 // Verify payment
-                                $payment->update([
+                                $record->update([
                                     'official_receipt_number' => $data['official_receipt_number'],
                                     'verified_by' => auth()->id(),
                                     'verified_at' => now(),
@@ -332,9 +316,10 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                 ]);
 
                                 // Generate permit for application
-                                if ($record && !$record->has_permit) {
-                                    $permitNumber = $record->id;
-                                    $record->issuePermit((string) $permitNumber);
+                                $application = $record->application;
+                                if ($application && !$application->has_permit) {
+                                    $permitNumber = $application->id;
+                                    $application->issuePermit((string) $permitNumber);
                                 }
 
                                 Notification::make()
@@ -348,7 +333,7 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                     ->modalCancelActionLabel('Close')
                     ->closeModalByClickingAway(false),
             ])
-            ->defaultSort('payment.created_at', 'desc')
+            ->defaultSort('created_at', 'desc')
             ->paginated([10, 25, 50, 100])
             ->poll('30s');
     }

@@ -85,21 +85,23 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <!-- LEFT: FILAMENT TABLE -->
                     <div class="lg:col-span-2">
-                        <x-filament::tabs>
-                            @foreach ($this->getTabs() as $tabKey => $tab)
-                                <x-filament::tabs.item
-                                    :active="$activeTab === $tabKey"
-                                    wire:click="$set('activeTab', '{{ $tabKey }}')"
-                                >
-                                    {{ $tab->getLabel() }}
-                                    @if ($badge = $tab->getBadge())
-                                        <x-filament::badge :color="$tab->getBadgeColor()">
-                                            {{ $badge }}
-                                        </x-filament::badge>
-                                    @endif
-                                </x-filament::tabs.item>
-                            @endforeach
-                        </x-filament::tabs>
+                        <div class="mb-4">
+                            <x-filament::tabs>
+                                @foreach ($this->getTabs() as $tabKey => $tab)
+                                    <x-filament::tabs.item
+                                        :active="$activeTab === $tabKey"
+                                        wire:click="$set('activeTab', '{{ $tabKey }}')"
+                                    >
+                                        {{ $tab->getLabel() }}
+                                        @if ($badge = $tab->getBadge())
+                                            <x-filament::badge :color="$tab->getBadgeColor()">
+                                                {{ $badge }}
+                                            </x-filament::badge>
+                                        @endif
+                                    </x-filament::tabs.item>
+                                @endforeach
+                            </x-filament::tabs>
+                        </div>
                         {{ $this->table }}
                     </div>
 
