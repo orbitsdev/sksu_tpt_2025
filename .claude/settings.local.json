@@ -10,7 +10,8 @@
       "Bash(herd php artisan tinker:*)",
       "Bash(herd php artisan:*)",
       "Bash(findstr:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(dir /s /b appFilamentResources*.php)"
     ],
     "deny": [],
     "ask": []

@@ -13,6 +13,7 @@ class ApplicationInformation extends Model
         'type',
         'first_name',
         'last_name',
+        'middle_name',
         'extension',
         'present_address',
         'permanent_address',
@@ -45,6 +46,7 @@ class ApplicationInformation extends Model
     {
         $parts = array_filter([
             $this->first_name,
+            $this->middle_name,
             $this->last_name,
             $this->extension,
         ]);

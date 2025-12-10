@@ -10,7 +10,6 @@ class Application extends Model
     use ApplicationRelations;
 
     protected $fillable = [
-        'payment_id',
         'examination_id',
         'user_id',
         'status',

@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
 
             // foreign keys
-            $table->foreignId('payment_id')->nullable()->constrained()->onDelete('set null');
             $table->foreignId('examination_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
 

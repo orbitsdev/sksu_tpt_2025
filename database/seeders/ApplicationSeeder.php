@@ -85,10 +85,26 @@ class ApplicationSeeder extends Seeder
             foreach ($applicationsData as $index => $appData) {
                 $examination = $examinations->random();
 
-                // Create payment if needed
-                $payment = null;
+                // Create application first
+                $application = Application::create([
+                    'examination_id' => $examination->id,
+                    'user_id' => $applicant->id,
+                    'status' => $appData['status'],
+                    'step' => $appData['step'],
+                    'step_description' => $appData['step_description'],
+                    'examinee_number' => $appData['has_permit'] ? 'EXM-2025-' . str_pad($index + 1, 6, '0', STR_PAD_LEFT) : null,
+                    'permit_number' => $appData['has_permit'] ? 'PERMIT-2025-' . str_pad($index + 1, 6, '0', STR_PAD_LEFT) : null,
+                    'permit_issued_at' => $appData['has_permit'] ? now()->subDays(rand(0, 3)) : null,
+                    'first_priority_program_id' => $programs->get(0)->id,
+                    'second_priority_program_id' => $programs->get(1)->id,
+                    'final_program_id' => $appData['status'] === 'COMPLETED' ? $programs->get(0)->id : null,
+                    'finalized_at' => $appData['status'] === 'COMPLETED' ? now() : null,
+                ]);
+
+                // Create payment if needed (now references application)
                 if ($appData['has_payment']) {
-                    $payment = Payment::create([
+                    Payment::create([
+                        'application_id' => $application->id,
                         'examination_id' => $examination->id,
                         'applicant_id' => $applicant->id,
                         'cashier_id' => null,
@@ -106,23 +122,6 @@ class ApplicationSeeder extends Seeder
                         'verified_by' => $appData['payment_status'] === 'VERIFIED' ? 1 : null,
                     ]);
                 }
-
-                // Create application
-                $application = Application::create([
-                    'payment_id' => $payment?->id,
-                    'examination_id' => $examination->id,
-                    'user_id' => $applicant->id,
-                    'status' => $appData['status'],
-                    'step' => $appData['step'],
-                    'step_description' => $appData['step_description'],
-                    'examinee_number' => $appData['has_permit'] ? 'EXM-2025-' . str_pad($index + 1, 6, '0', STR_PAD_LEFT) : null,
-                    'permit_number' => $appData['has_permit'] ? 'PERMIT-2025-' . str_pad($index + 1, 6, '0', STR_PAD_LEFT) : null,
-                    'permit_issued_at' => $appData['has_permit'] ? now()->subDays(rand(0, 3)) : null,
-                    'first_priority_program_id' => $programs->get(0)->id,
-                    'second_priority_program_id' => $programs->get(1)->id,
-                    'final_program_id' => $appData['status'] === 'COMPLETED' ? $programs->get(0)->id : null,
-                    'finalized_at' => $appData['status'] === 'COMPLETED' ? now() : null,
-                ]);
 
                 // Create application information if needed
                 if ($appData['has_info']) {

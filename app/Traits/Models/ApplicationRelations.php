@@ -7,6 +7,8 @@ use App\Models\Payment;
 use App\Models\Program;
 use App\Models\Examination;
 use App\Models\ApplicationSlot;
+use App\Models\ApplicationInformation;
+use App\Models\HonorOrAwardsReceived;
 
 trait  ApplicationRelations
 {
@@ -24,7 +26,17 @@ trait  ApplicationRelations
 
     public function payment()
     {
-        return $this->belongsTo(Payment::class);
+        return $this->hasOne(Payment::class);
+    }
+
+    public function applicationInformation()
+    {
+        return $this->hasOne(ApplicationInformation::class);
+    }
+
+    public function honorOrAwards()
+    {
+        return $this->hasMany(HonorOrAwardsReceived::class);
     }
 
     public function firstPriorityProgram()

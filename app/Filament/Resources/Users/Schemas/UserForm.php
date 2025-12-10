@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\PersonalInformation\Schemas;
+namespace App\Filament\Resources\Users\Schemas;
 
-use App\Models\User;
+use App\Models\Campus;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -10,39 +10,62 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Hash;
 
-class PersonalInformationForm
+class UserForm
 {
     public static function configure(Schema $schema): Schema
     {
         return $schema
             ->components([
-                Select::make('user_id')
-                    ->label('Student Account')
-                    ->options(User::query()
-                        ->whereHas('roles', fn (Builder $query) => $query->where('name', 'student'))
-                        ->whereDoesntHave('personalInformation')
-                        ->pluck('name', 'id'))
-                    ->getSearchResultsUsing(fn (string $search): array => User::query()
-                        ->where('name', 'like', "%{$search}%")
-                        ->limit(50)
-                        ->pluck('name', 'id')
-                        ->all())
-                    ->disabled(fn (string $operation): bool => $operation === 'edit')
-                    ->getOptionLabelUsing(fn ($value): ?string => User::find($value)?->name)
-                    ->searchable()
-                    ->preload()
-                    ->required()
-                    ->columnSpanFull()
-                    ->helperText('Select the student account to link this personal information'),
-
-                Tabs::make('Personal Information')
+                Tabs::make('User Information')
                     ->tabs([
-                        Tab::make('Basic Information')
+                        Tab::make('Account')
+                            ->icon('heroicon-o-user-circle')
+                            ->schema([
+                                Section::make('Account Information')
+                                    ->schema([
+                                        TextInput::make('name')
+                                            ->required()
+                                            ->maxLength(255)
+                                            ->label('Full Name'),
+
+                                        TextInput::make('email')
+                                            ->email()
+                                            ->required()
+                                            ->unique(ignoreRecord: true)
+                                            ->maxLength(255),
+
+                                        TextInput::make('password')
+                                            ->password()
+                                            ->dehydrateStateUsing(fn ($state) => filled($state) ? Hash::make($state) : null)
+                                            ->required(fn (string $operation): bool => $operation === 'create')
+                                            ->dehydrated(fn ($state) => filled($state))
+                                            ->maxLength(255)
+                                            ->helperText('Leave blank to keep current password'),
+
+                                        Select::make('campus_id')
+                                            ->label('Campus')
+                                            ->options(Campus::pluck('name', 'id'))
+                                            ->searchable()
+                                            ->preload()
+                                            ->nullable(),
+
+                                        Select::make('roles')
+                                            ->relationship('roles', 'name')
+                                            ->multiple()
+                                            ->preload()
+                                            ->required()
+                                            ->label('Role(s)'),
+                                    ])
+                                    ->columns(2),
+                            ]),
+
+                        Tab::make('Personal Information')
                             ->icon('heroicon-o-user')
                             ->schema([
                                 Section::make('Name')
+                                    ->relationship('personalInformation')
                                     ->schema([
                                         TextInput::make('first_name')
                                             ->label('First Name')
@@ -67,6 +90,7 @@ class PersonalInformationForm
                                     ->columns(4),
 
                                 Section::make('Personal Details')
+                                    ->relationship('personalInformation')
                                     ->schema([
                                         Select::make('sex')
                                             ->label('Sex')
@@ -85,19 +109,16 @@ class PersonalInformationForm
                                             ->displayFormat('M d, Y'),
                                     ])
                                     ->columns(2),
-                            ]),
 
-                        Tab::make('Contact Information')
-                            ->icon('heroicon-o-phone')
-                            ->schema([
                                 Section::make('Contact Details')
+                                    ->relationship('personalInformation')
                                     ->schema([
                                         TextInput::make('email')
                                             ->label('Email Address')
                                             ->email()
                                             ->required()
                                             ->maxLength(255)
-                                            ->placeholder('student@example.com'),
+                                            ->placeholder('user@example.com'),
 
                                         TextInput::make('contact_number')
                                             ->label('Contact Number')

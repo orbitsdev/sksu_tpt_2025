@@ -8,6 +8,7 @@ class Payment extends Model
 {
     use PaymentRelations;
      protected $fillable = [
+        'application_id',
         'examination_id',
         'applicant_id',
         'cashier_id',
