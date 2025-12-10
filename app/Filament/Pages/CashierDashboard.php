@@ -351,9 +351,10 @@ class CashierDashboard extends Page implements HasForms, HasActions
                                         ->minValue(0)
                                         ->live(onBlur: true)
                                         ->afterStateUpdated(function (Set $set, Get $get, ?float $state) {
-                                            $amountPaid = (float) $get('amount_paid');
-                                            if ($state && $amountPaid) {
-                                                $set('change', max(0, $amountPaid - $state));
+                                            $amountPaid = (float) ($get('amount_paid') ?? 0);
+                                            $amount = (float) ($state ?? 0);
+                                            if ($amountPaid > 0 && $amount > 0) {
+                                                $set('change', max(0, $amountPaid - $amount));
                                             }
                                         }),
                                     TextInput::make('amount_paid')
@@ -364,9 +365,10 @@ class CashierDashboard extends Page implements HasForms, HasActions
                                         ->minValue(0)
                                         ->live(onBlur: true)
                                         ->afterStateUpdated(function (Set $set, Get $get, ?float $state) {
-                                            $amount = (float) $get('amount');
-                                            if ($state && $amount) {
-                                                $set('change', max(0, $state - $amount));
+                                            $amount = (float) ($get('amount') ?? 0);
+                                            $amountPaid = (float) ($state ?? 0);
+                                            if ($amountPaid > 0 && $amount > 0) {
+                                                $set('change', max(0, $amountPaid - $amount));
                                             }
                                         }),
                                     TextInput::make('change')
