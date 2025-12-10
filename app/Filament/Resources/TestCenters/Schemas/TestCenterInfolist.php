@@ -14,7 +14,7 @@ class TestCenterInfolist
             ->components([
                 TextEntry::make('campus.name')
                 ->label('Campus')
-                    ->numeric(),
+                ,
                 TextEntry::make('name'),
                 IconEntry::make('is_active')
                     ->boolean(),

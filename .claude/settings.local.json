@@ -11,7 +11,12 @@
       "Bash(herd php artisan:*)",
       "Bash(findstr:*)",
       "Bash(npm run build:*)",
-      "Bash(dir /s /b appFilamentResources*.php)"
+      "Bash(dir /s /b appFilamentResources*.php)",
+      "Bash(grep:*)",
+      "Bash(dir /s /b \"C:\\Users\\Brian\\Documents\\sksu_tpt_2025\\vendor\\filament\\schemas\\src\\Components\\*.php\")",
+      "Bash(composer dump-autoload:*)",
+      "WebFetch(domain:filamentphp.com)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
