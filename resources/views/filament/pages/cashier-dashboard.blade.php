@@ -12,6 +12,9 @@
                 </div>
 
                 <div class="flex items-center gap-4">
+                    <!-- Create Application Button -->
+                    {{ $this->createApplicationAction }}
+
                     <!-- Search -->
                     <div class="relative">
                         <input
@@ -91,18 +94,18 @@
                     </div>
                 </div>
 
-                <!-- MAIN GRID: TABLE + DETAILS -->
+                <!-- MAIN GRID: TABLE + RECENT APPROVED -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <!-- LEFT: PENDING TABLE -->
-                    <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+                    <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col min-h-[600px]">
                         <!-- Table header -->
                         <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
                             <div>
                                 <div class="text-sm font-semibold text-slate-800">
-                                    Pending Payments
+                                    Pending Applications
                                 </div>
                                 <div class="text-[11px] text-slate-500">
-                                    These applicants submitted payment but are not yet verified.
+                                    Applications with payment pending verification.
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 text-xs">
@@ -138,40 +141,38 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
-                                    @forelse($this->pendingPayments as $payment)
-                                        <tr
-                                            wire:click="selectPayment({{ $payment->id }})"
-                                            class="hover:bg-slate-50 cursor-pointer {{ $selectedPaymentId === $payment->id ? 'bg-emerald-50/60' : '' }}">
+                                    @forelse($this->pendingApplications as $application)
+                                        <tr class="hover:bg-slate-50">
                                             <td class="px-4 py-3 align-top font-medium text-slate-800">
-                                                {{ $payment->application?->examinee_number ?? 'N/A' }}
+                                                {{ $application->examinee_number ?? 'N/A' }}
                                                 <div class="text-[10px] text-slate-400">
-                                                    Ref: {{ $payment->payment_reference ?? 'N/A' }}
+                                                    Ref: {{ $application->payment?->payment_reference ?? 'N/A' }}
                                                 </div>
                                             </td>
                                             <td class="px-4 py-3 align-top">
                                                 <div class="font-medium text-slate-800">
-                                                    {{ $payment->applicant?->name ?? 'Unknown' }}
+                                                    {{ $application->user?->name ?? 'Unknown' }}
                                                 </div>
                                                 <div class="text-[10px] text-slate-500">
-                                                    {{ $payment->application?->applicationInformation?->applicant_type ?? 'N/A' }} ·
-                                                    {{ $payment->application?->firstPriorityProgram?->code ?? 'N/A' }}
+                                                    {{ $application->applicationInformation?->applicant_type ?? 'N/A' }} ·
+                                                    {{ $application->firstPriorityProgram?->code ?? 'N/A' }}
                                                 </div>
                                             </td>
                                             <td class="px-4 py-3 align-top text-[11px]">
-                                                @if($payment->application?->applicationSlot)
+                                                @if($application->applicationSlot)
                                                     <div class="font-medium text-slate-800">
-                                                        {{ $payment->application->applicationSlot->examinationSlot?->schedule_date?->format('M d, Y') ?? 'TBA' }} ·
-                                                        {{ $payment->application->applicationSlot->examinationSlot?->start_time?->format('g:i A') ?? '' }}
+                                                        {{ $application->applicationSlot->examinationSlot?->schedule_date?->format('M d, Y') ?? 'TBA' }} ·
+                                                        {{ $application->applicationSlot->examinationSlot?->start_time?->format('g:i A') ?? '' }}
                                                     </div>
                                                     <div class="text-[10px] text-slate-500">
-                                                        {{ $payment->application->applicationSlot->examinationSlot?->examinationRoom?->name ?? 'TBA' }}
+                                                        {{ $application->applicationSlot->examinationSlot?->examinationRoom?->name ?? 'TBA' }}
                                                     </div>
                                                 @else
                                                     <div class="text-[10px] text-slate-400">Not scheduled yet</div>
                                                 @endif
                                             </td>
                                             <td class="px-4 py-3 align-top text-center text-sm font-semibold text-slate-900">
-                                                ₱{{ number_format($payment->amount, 2) }}
+                                                ₱{{ number_format($application->payment?->amount ?? 0, 2) }}
                                             </td>
                                             <td class="px-4 py-3 align-top text-center">
                                                 <span class="inline-flex items-center rounded-full bg-amber-50 px-2 py-1 text-[10px] font-medium text-amber-600 border border-amber-100">
@@ -179,17 +180,13 @@
                                                 </span>
                                             </td>
                                             <td class="px-4 py-3 align-top text-right">
-                                                <button
-                                                    wire:click.stop="selectPayment({{ $payment->id }})"
-                                                    class="px-3 py-1.5 rounded-full {{ $selectedPaymentId === $payment->id ? 'bg-slate-900 text-slate-50' : 'border border-slate-200 text-slate-700 hover:bg-slate-50' }} text-[11px]">
-                                                    View / Verify
-                                                </button>
+                                                {{ ($this->viewAndVerifyAction)(['application' => $application->id]) }}
                                             </td>
                                         </tr>
                                     @empty
                                         <tr>
                                             <td colspan="6" class="px-4 py-8 text-center text-slate-500 text-sm">
-                                                No pending payments found.
+                                                No pending applications found.
                                             </td>
                                         </tr>
                                     @endforelse
@@ -199,9 +196,9 @@
 
                         <!-- Table footer with pagination -->
                         <div class="px-4 py-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                            <div>Showing {{ $this->pendingPayments->firstItem() ?? 0 }}–{{ $this->pendingPayments->lastItem() ?? 0 }} of {{ $this->pendingPayments->total() }} pending payments</div>
+                            <div>Showing {{ $this->pendingApplications->firstItem() ?? 0 }}–{{ $this->pendingApplications->lastItem() ?? 0 }} of {{ $this->pendingApplications->total() }} pending applications</div>
                             <div class="flex items-center gap-2">
-                                @if ($this->pendingPayments->onFirstPage())
+                                @if ($this->pendingApplications->onFirstPage())
                                     <button disabled class="px-2 py-1 rounded-lg border border-slate-200 text-slate-400 cursor-not-allowed">
                                         Prev
                                     </button>
@@ -211,19 +208,19 @@
                                     </button>
                                 @endif
 
-                                @foreach(range(1, $this->pendingPayments->lastPage()) as $page)
-                                    @if($page == $this->pendingPayments->currentPage())
+                                @foreach(range(1, $this->pendingApplications->lastPage()) as $page)
+                                    @if($page == $this->pendingApplications->currentPage())
                                         <button class="px-2 py-1 rounded-lg bg-slate-900 text-slate-50">
                                             {{ $page }}
                                         </button>
-                                    @elseif($page >= $this->pendingPayments->currentPage() - 2 && $page <= $this->pendingPayments->currentPage() + 2)
+                                    @elseif($page >= $this->pendingApplications->currentPage() - 2 && $page <= $this->pendingApplications->currentPage() + 2)
                                         <button wire:click="gotoPage({{ $page }})" class="px-2 py-1 rounded-lg border border-slate-200 hover:bg-slate-50">
                                             {{ $page }}
                                         </button>
                                     @endif
                                 @endforeach
 
-                                @if ($this->pendingPayments->hasMorePages())
+                                @if ($this->pendingApplications->hasMorePages())
                                     <button wire:click="nextPage" class="px-2 py-1 rounded-lg border border-slate-200 hover:bg-slate-50">
                                         Next
                                     </button>
@@ -236,209 +233,49 @@
                         </div>
                     </div>
 
-                    <!-- RIGHT: DETAIL PANEL -->
+                    <!-- RIGHT: RECENT APPROVED PAYMENTS -->
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col">
-                        @if($this->selectedPayment)
-                            @php
-                                $payment = $this->selectedPayment;
-                                $application = $payment->application;
-                                $info = $application?->applicationInformation;
-                                $slot = $application?->applicationSlot;
-                            @endphp
-
-                            <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-                                <div>
-                                    <div class="text-sm font-semibold text-slate-800">
-                                        Selected Payment
-                                    </div>
-                                    <div class="text-[11px] text-slate-500">
-                                        Review information before approval.
-                                    </div>
-                                </div>
-                                <div class="text-[11px] text-slate-500">
-                                    #{{ $application?->examinee_number ?? 'N/A' }}
-                                </div>
-                            </div>
-
-                            <div class="p-4 space-y-4 text-xs overflow-y-auto flex-1">
-                                <!-- Applicant block -->
-                                <div class="rounded-xl border border-slate-100 bg-slate-50/80 p-3 space-y-1">
-                                    <div class="text-[11px] uppercase text-slate-500 font-medium">
-                                        Applicant
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <div class="text-sm font-semibold text-slate-900">
-                                                {{ $payment->applicant?->name ?? 'Unknown' }}
-                                            </div>
-                                            <div class="text-[11px] text-slate-500">
-                                                {{ $info?->applicant_type ?? 'N/A' }} · {{ $application?->firstPriorityProgram?->name ?? 'N/A' }}
-                                            </div>
-                                        </div>
-                                        <div class="text-right text-[10px] text-slate-500">
-                                            Contact:
-                                            <div class="font-medium text-slate-800">
-                                                {{ $info?->contact_number ?? 'N/A' }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Exam & seat -->
-                                @if($slot)
-                                    <div class="rounded-xl border border-slate-100 p-3 space-y-1">
-                                        <div class="text-[11px] uppercase text-slate-500 font-medium">
-                                            Examination Slot
-                                        </div>
-                                        <div class="text-sm font-semibold text-slate-900">
-                                            {{ $slot->examinationSlot?->schedule_date?->format('F d, Y') ?? 'TBA' }} ·
-                                            {{ $slot->examinationSlot?->start_time?->format('g:i A') ?? '' }} –
-                                            {{ $slot->examinationSlot?->end_time?->format('g:i A') ?? '' }}
-                                        </div>
-                                        <div class="text-[11px] text-slate-500">
-                                            {{ $slot->examinationSlot?->examinationRoom?->testCenter?->name ?? 'TBA' }} ·
-                                            {{ $slot->examinationSlot?->examinationRoom?->building ?? '' }} ·
-                                            {{ $slot->examinationSlot?->examinationRoom?->name ?? 'TBA' }}
-                                        </div>
-                                        <div class="flex items-center justify-between mt-2 text-[11px]">
-                                            <div class="text-slate-500">
-                                                Seat Number:
-                                                <span class="font-semibold text-slate-900">{{ $slot->seat_number ?? 'TBA' }}</span>
-                                            </div>
-                                            <div class="text-slate-500">
-                                                Capacity:
-                                                <span class="font-semibold text-slate-900">
-                                                    {{ $slot->examinationSlot?->current_capacity ?? 0 }} / {{ $slot->examinationSlot?->max_capacity ?? 0 }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-
-                                <!-- Payment block -->
-                                <div class="rounded-xl border border-slate-100 p-3 space-y-2">
-                                    <div class="flex items-start justify-between">
-                                        <div>
-                                            <div class="text-[11px] uppercase text-slate-500 font-medium">
-                                                Payment Details
-                                            </div>
-                                            <div class="text-sm font-semibold text-slate-900">
-                                                ₱{{ number_format($payment->amount, 2) }}
-                                            </div>
-                                            <div class="text-[11px] text-slate-500">
-                                                Payment Type:
-                                                <span class="font-medium text-slate-800">
-                                                    {{ str_replace('_', ' ', $payment->payment_method) }}
-                                                </span>
-                                            </div>
-                                            <div class="text-[11px] text-slate-500">
-                                                Reference No:
-                                                <span class="font-mono text-[11px] bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">
-                                                    {{ $payment->payment_reference ?? 'N/A' }}
-                                                </span>
-                                            </div>
-                                            <div class="text-[11px] text-slate-500">
-                                                Date Paid:
-                                                <span class="font-medium text-slate-800">
-                                                    {{ $payment->paid_at?->format('M d, Y · g:i A') ?? 'N/A' }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="text-right text-[11px] text-amber-600">
-                                            Status:
-                                            <div class="font-semibold">Pending</div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Placeholder for receipt image -->
-                                    @if($payment->receipt_file)
-                                        <div class="mt-2">
-                                            <div class="text-[11px] text-slate-500 mb-1">
-                                                Proof of Payment
-                                            </div>
-                                            <img src="{{ Storage::url($payment->receipt_file) }}" alt="Receipt" class="w-full rounded-xl border border-slate-200">
-                                        </div>
-                                    @else
-                                        <div class="mt-2">
-                                            <div class="text-[11px] text-slate-500 mb-1">
-                                                Proof of Payment
-                                            </div>
-                                            <div class="aspect-video w-full rounded-xl border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center text-[11px] text-slate-400">
-                                                No receipt uploaded
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <!-- Footer actions -->
-                            <div class="px-4 py-3 border-t border-slate-100 flex items-center justify-between">
-                                <button class="text-[11px] text-slate-500 hover:text-slate-700">
-                                    View applicant profile
-                                </button>
-                                <div class="flex items-center gap-2">
-                                    {{ ($this->rejectAction)(['payment' => $payment->id]) }}
-                                    {{ ($this->approveAction)(['payment' => $payment->id]) }}
-                                </div>
-                            </div>
-                        @else
-                            <div class="flex-1 flex items-center justify-center p-8">
-                                <div class="text-center text-slate-400">
-                                    <svg class="mx-auto h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <p class="mt-2 text-sm">No payment selected</p>
-                                    <p class="text-xs text-slate-400">Select a payment to view details</p>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-
-                <!-- SIMPLE HISTORY PREVIEW -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 text-xs">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
+                        <div class="px-4 py-3 border-b border-slate-100">
                             <div class="text-sm font-semibold text-slate-800">
                                 Recent Approved Payments
                             </div>
                             <div class="text-[11px] text-slate-500">
-                                Quick glimpse of your last verifications.
+                                Your last verifications today
                             </div>
                         </div>
-                        <button class="text-[11px] text-emerald-600 hover:text-emerald-700">
-                            View full history →
-                        </button>
-                    </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        @forelse($this->recentApproved as $approved)
-                            <div class="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
-                                <div class="flex items-center justify-between mb-1">
-                                    <div class="text-[11px] text-slate-500">Application</div>
-                                    <div class="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                                        Approved
+                        <div class="p-4 space-y-3 overflow-y-auto">
+                            @forelse($this->recentApproved as $approved)
+                                <div class="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <div class="text-[11px] text-slate-500">Application</div>
+                                        <div class="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                            Approved
+                                        </div>
+                                    </div>
+                                    <div class="text-sm font-semibold text-slate-900">
+                                        {{ $approved->application?->examinee_number ?? 'N/A' }}
+                                    </div>
+                                    <div class="text-[11px] text-slate-500">
+                                        {{ $approved->applicant?->name ?? 'Unknown' }} · {{ $approved->application?->firstPriorityProgram?->code ?? 'N/A' }}
+                                    </div>
+                                    <div class="mt-2 text-[11px] text-slate-500">
+                                        Amount:
+                                        <span class="font-semibold text-slate-900">₱{{ number_format($approved->amount, 2) }}</span>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400">
+                                        {{ $approved->verified_at?->format('M d · g:i A') ?? 'N/A' }}
                                     </div>
                                 </div>
-                                <div class="text-sm font-semibold text-slate-900">
-                                    {{ $approved->application?->examinee_number ?? 'N/A' }}
+                            @empty
+                                <div class="text-center text-slate-400 py-8">
+                                    <svg class="mx-auto h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <p class="mt-2 text-xs">No approved payments today yet</p>
                                 </div>
-                                <div class="text-[11px] text-slate-500">
-                                    {{ $approved->applicant?->name ?? 'Unknown' }} · {{ $approved->application?->firstPriorityProgram?->code ?? 'N/A' }}
-                                </div>
-                                <div class="mt-2 text-[11px] text-slate-500">
-                                    Amount:
-                                    <span class="font-semibold text-slate-900">₱{{ number_format($approved->amount, 2) }}</span>
-                                </div>
-                                <div class="text-[10px] text-slate-400">
-                                    {{ $approved->verified_at?->format('M d · g:i A') ?? 'N/A' }}
-                                </div>
-                            </div>
-                        @empty
-                            <div class="col-span-3 text-center text-slate-400 py-4">
-                                No approved payments today yet
-                            </div>
-                        @endforelse
+                            @endforelse
+                        </div>
                     </div>
                 </div>
             </section>

@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\Models\PaymentRelations;
-class Payment extends Model
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+
+class Payment extends Model implements HasMedia
 {
     use PaymentRelations;
+    use InteractsWithMedia;
      protected $fillable = [
         'application_id',
         'examination_id',
@@ -91,5 +95,18 @@ class Payment extends Model
         $this->update([
             'status' => 'REJECTED',
         ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Media Library
+    |--------------------------------------------------------------------------
+    */
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('receipt')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']);
     }
 }

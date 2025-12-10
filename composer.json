@@ -10,6 +10,7 @@
         "codeat3/blade-fontisto-icons": "^1.5",
         "filament/filament": "4.0",
         "filament/forms": "4.0",
+        "filament/spatie-laravel-media-library-plugin": "4.0",
         "filament/support": "4.0",
         "filament/tables": "4.0",
         "laravel/fortify": "^1.30",
