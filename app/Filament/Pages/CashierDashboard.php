@@ -629,13 +629,13 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                         'track_and_strand_taken' => $data['track_and_strand_taken'] ?? null,
                     ]);
 
-                    // 4b. Attach photo to ApplicationInformation using Media Library
+                    // 4b. Attach photo to Application using Media Library
                     if (!empty($data['photo'])) {
-                        $applicationInfo->addMedia(storage_path('app/public/' . $data['photo']))
+                        $application->addMedia(storage_path('app/public/' . $data['photo']))
                             ->toMediaCollection('photo');
                     }
 
-                    // 5. Create Payment (immediately verified for walk-in)
+                    // 5. Create Payment (PENDING - cashier needs to verify in table)
                     $payment = Payment::create([
                         'examination_id' => $data['examination_id'],
                         'applicant_id' => $user->id,
@@ -646,30 +646,15 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                         'change' => $data['change'],
                         'payment_method' => $data['payment_method'],
                         'official_receipt_number' => $data['official_receipt_number'],
-                        'status' => 'VERIFIED',
+                        'status' => 'PENDING',
                         'paid_at' => now(),
-                        'verified_at' => now(),
-                        'verified_by' => auth()->id(),
-                    ]);
-
-                    // 6. Generate Examinee Number and Issue Permit
-                    $startingPoint = (int) SystemSetting::where('name', 'Examinee Number Starting Point')->value('value') ?? 500000;
-                    $examineeNumber = $startingPoint + $application->id;
-
-                    $application->update([
-                        'examinee_number' => (string) $examineeNumber,
-                        'permit_number' => (string) $examineeNumber,
-                        'permit_issued_at' => now(),
-                        'status' => 'PERMIT_ISSUED',
-                        'step' => 4,
-                        'step_description' => 'Permit Issued',
                     ]);
 
                     \DB::commit();
 
                     Notification::make()
                         ->title('Application Created Successfully!')
-                        ->body("Examinee Number: {$examineeNumber}")
+                        ->body('Application is now pending verification in the table below.')
                         ->success()
                         ->duration(10000)
                         ->send();

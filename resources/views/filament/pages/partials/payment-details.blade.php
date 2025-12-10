@@ -4,7 +4,7 @@
     $applicant = $application?->user; // Use application's user relationship
     $info = $application?->applicationInformation;
     $slot = $application?->applicationSlot;
-    $photo = $info?->getFirstMediaUrl('photo');
+    $photo = $application?->getFirstMediaUrl('photo');
 @endphp
 
 <div class="p-4 space-y-4 text-xs">
