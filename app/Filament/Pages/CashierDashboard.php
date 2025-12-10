@@ -9,6 +9,7 @@ use App\Models\PersonalInformation;
 use App\Models\ApplicationInformation;
 use App\Models\Program;
 use App\Models\Examination;
+use App\Models\SystemSetting;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Actions\Action;
@@ -250,8 +251,7 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                 TextInput::make('official_receipt_number')
                                     ->label('Official Receipt Number')
                                     ->required()
-                                    ->maxLength(255)
-                                    ->unique('payments', 'official_receipt_number'),
+                                    ->maxLength(255),
                                 Textarea::make('remarks')
                                     ->label('Cashier Remarks (Optional)')
                                     ->rows(3)
@@ -268,6 +268,20 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                     return;
                                 }
 
+                                // Check if OR number already exists
+                                $existingPayment = Payment::where('official_receipt_number', $data['official_receipt_number'])
+                                    ->where('id', '!=', $payment->id)
+                                    ->first();
+
+                                if ($existingPayment) {
+                                    Notification::make()
+                                        ->title('Duplicate OR Number')
+                                        ->body('This Official Receipt Number is already used.')
+                                        ->danger()
+                                        ->send();
+                                    return;
+                                }
+
                                 // Verify payment
                                 $payment->update([
                                     'official_receipt_number' => $data['official_receipt_number'],
@@ -276,10 +290,11 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                     'status' => 'VERIFIED',
                                 ]);
 
-                                // Generate permit for application
+                                // Generate permit for application using SystemSetting
                                 if ($record && !$record->has_permit) {
-                                    $permitNumber = 'SKSU-' . now()->year . '-' . str_pad($record->id, 6, '0', STR_PAD_LEFT);
-                                    $record->issuePermit($permitNumber);
+                                    $startingPoint = (int) SystemSetting::where('name', 'Examinee Number Starting Point')->value('value') ?? 500000;
+                                    $permitNumber = $startingPoint + $record->id;
+                                    $record->issuePermit((string) $permitNumber);
                                 }
 
                                 Notification::make()
@@ -316,7 +331,8 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
         return Action::make('createApplication')
             ->label('Create New Application')
             ->icon('heroicon-o-plus-circle')
-            ->color('success')
+            ->color('primary')
+            ->extraAttributes(['class' => 'font-bold'])
             ->modalWidth('7xl')
             ->slideOver()
             ->schema([
@@ -360,6 +376,21 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                     Wizard\Step::make('Personal Information')
                         ->icon('heroicon-o-identification')
                         ->schema([
+                            Section::make('Student Photo')
+                                ->schema([
+                                    FileUpload::make('photo')
+                                        ->label('Student Photo')
+                                        ->image()
+                                        ->imageEditor()
+                                        ->imageEditorAspectRatios([
+                                            '1:1',
+                                        ])
+                                        ->maxSize(2048)
+                                        ->helperText('Take or upload student photo (ID size)')
+                                        ->disk('public')
+                                        ->directory('student-photos')
+                                        ->visibility('public'),
+                                ]),
                             Section::make('Basic Information')
                                 ->columns(3)
                                 ->schema([
@@ -583,7 +614,7 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                     ]);
 
                     // 4. Create Application Information
-                    ApplicationInformation::create([
+                    $applicationInfo = ApplicationInformation::create([
                         'application_id' => $application->id,
                         'type' => $data['applicant_type'],
                         'first_name' => $data['first_name'],
@@ -597,6 +628,12 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                         'year_graduated' => $data['year_graduated'] ?? null,
                         'track_and_strand_taken' => $data['track_and_strand_taken'] ?? null,
                     ]);
+
+                    // 4b. Attach photo to ApplicationInformation using Media Library
+                    if (!empty($data['photo'])) {
+                        $applicationInfo->addMedia(storage_path('app/public/' . $data['photo']))
+                            ->toMediaCollection('photo');
+                    }
 
                     // 5. Create Payment (immediately verified for walk-in)
                     $payment = Payment::create([
@@ -616,10 +653,12 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                     ]);
 
                     // 6. Generate Examinee Number and Issue Permit
-                    $examineeNumber = 'SKSU-' . now()->year . '-' . str_pad($application->id, 6, '0', STR_PAD_LEFT);
+                    $startingPoint = (int) SystemSetting::where('name', 'Examinee Number Starting Point')->value('value') ?? 500000;
+                    $examineeNumber = $startingPoint + $application->id;
+
                     $application->update([
-                        'examinee_number' => $examineeNumber,
-                        'permit_number' => $examineeNumber,
+                        'examinee_number' => (string) $examineeNumber,
+                        'permit_number' => (string) $examineeNumber,
                         'permit_issued_at' => now(),
                         'status' => 'PERMIT_ISSUED',
                         'step' => 4,

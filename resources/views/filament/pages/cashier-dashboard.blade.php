@@ -112,7 +112,7 @@
                                         {{ $approved->application?->examinee_number ?? 'N/A' }}
                                     </div>
                                     <div class="text-[11px] text-slate-500">
-                                        {{ $approved->applicant?->name ?? 'Unknown' }} · {{ $approved->application?->firstPriorityProgram?->code ?? 'N/A' }}
+                                        {{ $approved->applicant?->personalInformation->getFullNameAttribute() ?? 'Unknown' }} · {{ $approved->application?->firstPriorityProgram?->code ?? 'N/A' }}
                                     </div>
                                     <div class="mt-2 text-[11px] text-slate-500">
                                         Amount:
