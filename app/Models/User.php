@@ -74,7 +74,7 @@ class User extends Authenticatable
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('student-profile')->singleFile();
+        $this->addMediaCollection('profile')->singleFile();
     }
 
 }

@@ -2,49 +2,59 @@
 
 namespace App\Filament\Pages;
 
-use App\Models\Payment;
-use App\Models\Application;
-use App\Models\User;
-use App\Models\PersonalInformation;
-use App\Models\ApplicationInformation;
-use App\Models\Program;
-use App\Models\Examination;
-use App\Models\SystemSetting;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Actions\Action;
-use Filament\Actions\Concerns\InteractsWithActions;
-use Filament\Actions\Contracts\HasActions;
-use Filament\Tables\Concerns\InteractsWithTable;
-use Filament\Tables\Contracts\HasTable;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\BadgeColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Pages\Page;
-use Filament\Notifications\Notification;
+
 use UnitEnum;
 use BackedEnum;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\FileUpload;
+use App\Models\User;
+use App\Models\Payment;
+use App\Models\Program;
+use Filament\Pages\Page;
+
+use Filament\Tables\Table;
+use App\Models\Application;
+use App\Models\Examination;
+use Filament\Actions\Action;
+use Livewire\Attributes\Computed;
+use Illuminate\Support\Facades\DB;
+use App\Models\PersonalInformation;
+use Filament\Tables\Filters\Filter;
+use Illuminate\Support\Facades\Hash;
+use App\Traits\InteractWithTabsTrait;
+
+
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DatePicker;
+
+use App\Models\ApplicationInformation;
+
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Components\Wizard;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Resources\Concerns\HasTabs;
+
 use Filament\Schemas\Components\Section;
+use Filament\Tables\Columns\BadgeColumn;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
+use Filament\Schemas\Components\Tabs\Tab;
+
+use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Database\Eloquent\Builder;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
-use Filament\Schemas\Components\Wizard;
-use Livewire\Attributes\Computed;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Actions\Concerns\InteractsWithActions;
 
 class CashierDashboard extends Page implements HasForms, HasActions, HasTable
 {
+    use HasTabs;
     use InteractsWithForms;
     use InteractsWithActions;
-    use InteractsWithTable;
+    use InteractWithTabsTrait;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-banknotes';
 
@@ -62,6 +72,38 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
     public function getHeading(): string
     {
         return '';
+    }
+
+    public function getTabs(): array
+    {
+        return [
+            'all' => Tab::make('All')
+                ->badge(Application::query()->whereHas('payment')->count()),
+            'pending' => Tab::make('Pending')
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('payment', function ($q) {
+                    $q->where('status', 'PENDING');
+                }))
+                ->badge(Application::query()->whereHas('payment', function ($q) {
+                    $q->where('status', 'PENDING');
+                })->count())
+                ->badgeColor('warning'),
+            'verified' => Tab::make('Verified')
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('payment', function ($q) {
+                    $q->where('status', 'VERIFIED');
+                }))
+                ->badge(Application::query()->whereHas('payment', function ($q) {
+                    $q->where('status', 'VERIFIED');
+                })->count())
+                ->badgeColor('success'),
+            'rejected' => Tab::make('Rejected')
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('payment', function ($q) {
+                    $q->where('status', 'REJECTED');
+                }))
+                ->badge(Application::query()->whereHas('payment', function ($q) {
+                    $q->where('status', 'REJECTED');
+                })->count())
+                ->badgeColor('danger'),
+        ];
     }
 
     // Computed properties for metrics
@@ -106,13 +148,12 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                     ->with([
                         'user',
                         'applicationInformation',
-                        'applicationSlot.examinationSlot.examinationRoom.testCenter',
+                        'applicationSlot.examinationSlot.testCenter',
+                        'applicationSlot.examinationRoom.examinationSlot.testCenter',
                         'firstPriorityProgram',
                         'payment'
                     ])
-                    ->whereHas('payment', function ($q) {
-                        $q->where('status', 'PENDING');
-                    })
+                    ->whereHas('payment')
             )
             ->columns([
                 TextColumn::make('examinee_number')
@@ -290,10 +331,9 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                     'status' => 'VERIFIED',
                                 ]);
 
-                                // Generate permit for application using SystemSetting
+                                // Generate permit for application
                                 if ($record && !$record->has_permit) {
-                                    $startingPoint = (int) SystemSetting::where('name', 'Examinee Number Starting Point')->value('value') ?? 500000;
-                                    $permitNumber = $startingPoint + $record->id;
+                                    $permitNumber = $record->id;
                                     $record->issuePermit((string) $permitNumber);
                                 }
 
@@ -556,7 +596,6 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                         ->dehydrated(true),
                                 ]),
                             Section::make('Payment Method')
-                                ->columns(2)
                                 ->schema([
                                     Select::make('payment_method')
                                         ->label('Payment Method')
@@ -567,20 +606,15 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                             'BANK_TRANSFER' => 'Bank Transfer',
                                         ])
                                         ->default('CASH'),
-                                    TextInput::make('official_receipt_number')
-                                        ->label('Official Receipt Number')
-                                        ->required()
-                                        ->unique('payments', 'official_receipt_number')
-                                        ->maxLength(255),
                                 ]),
                         ]),
                 ])
                 ->skippable(false),
             ])
-            ->modalSubmitActionLabel('Create Application & Issue Permit')
+            ->modalSubmitActionLabel('Submit Application for Verification')
             ->action(function (array $data) {
                 try {
-                    \DB::beginTransaction();
+                    DB::beginTransaction();
 
                     // 1. Create User
                     $user = User::create([
@@ -635,7 +669,7 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                             ->toMediaCollection('photo');
                     }
 
-                    // 5. Create Payment (PENDING - cashier needs to verify in table)
+                    // 5. Create Payment (PENDING - needs verification in table)
                     $payment = Payment::create([
                         'examination_id' => $data['examination_id'],
                         'applicant_id' => $user->id,
@@ -645,12 +679,11 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                         'amount_paid' => $data['amount_paid'],
                         'change' => $data['change'],
                         'payment_method' => $data['payment_method'],
-                        'official_receipt_number' => $data['official_receipt_number'],
                         'status' => 'PENDING',
                         'paid_at' => now(),
                     ]);
 
-                    \DB::commit();
+                    DB::commit();
 
                     Notification::make()
                         ->title('Application Created Successfully!')
@@ -663,7 +696,7 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                     unset($this->pendingApplications);
 
                 } catch (\Exception $e) {
-                    \DB::rollBack();
+                    DBS::rollBack();
 
                     Notification::make()
                         ->title('Error Creating Application')

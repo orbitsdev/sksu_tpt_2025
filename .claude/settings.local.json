@@ -16,7 +16,8 @@
       "Bash(dir /s /b \"C:\\Users\\Brian\\Documents\\sksu_tpt_2025\\vendor\\filament\\schemas\\src\\Components\\*.php\")",
       "Bash(composer dump-autoload:*)",
       "WebFetch(domain:filamentphp.com)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []

@@ -1,8 +1,8 @@
-<div>
+<div class="">
     <main class="flex-1 flex flex-col">
             <!-- TOP BAR -->
-            <header class="px-6 py-4 border-b bg-white flex items-center justify-between">
-                <div>
+            <header class="px-6 py-4 border-b border-primary-600 bg-white  flex items-center justify-between  ">
+                <div class="">
                     <h1 class="text-lg font-semibold text-slate-800">
                         Payment Verification
                     </h1>
@@ -85,6 +85,21 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <!-- LEFT: FILAMENT TABLE -->
                     <div class="lg:col-span-2">
+                        <x-filament::tabs>
+                            @foreach ($this->getTabs() as $tabKey => $tab)
+                                <x-filament::tabs.item
+                                    :active="$activeTab === $tabKey"
+                                    wire:click="$set('activeTab', '{{ $tabKey }}')"
+                                >
+                                    {{ $tab->getLabel() }}
+                                    @if ($badge = $tab->getBadge())
+                                        <x-filament::badge :color="$tab->getBadgeColor()">
+                                            {{ $badge }}
+                                        </x-filament::badge>
+                                    @endif
+                                </x-filament::tabs.item>
+                            @endforeach
+                        </x-filament::tabs>
                         {{ $this->table }}
                     </div>
 
