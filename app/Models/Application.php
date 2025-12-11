@@ -15,8 +15,8 @@ class Application extends Model implements HasMedia
     protected $fillable = [
         'examination_id',
         'user_id',
-        'status',
-        'step',
+        'previous_step',
+        'current_step',
         'step_description',
         'examinee_number',
         'permit_number',
@@ -30,12 +30,14 @@ class Application extends Model implements HasMedia
     protected $casts = [
         'permit_issued_at' => 'datetime',
         'finalized_at' => 'datetime',
-        'step' => 'integer',
+        'previous_step' => 'integer',
+        'current_step' => 'integer',
     ];
 
      protected $appends = [
         'has_permit',
         'is_finalized',
+        'status',
     ];
 
     public function getHasPermitAttribute(): bool
@@ -48,21 +50,37 @@ class Application extends Model implements HasMedia
         return !is_null($this->finalized_at);
     }
 
+    /**
+     * Get status based on current_step for backward compatibility with views
+     */
+    public function getStatusAttribute(): string
+    {
+        if ($this->current_step == 58) {
+            return 'rejected';
+        } elseif ($this->current_step >= 70) {
+            return 'approved';
+        } else {
+            return 'pending';
+        }
+    }
+
     public function issuePermit(string $permitNumber): void
     {
         $this->update([
             'permit_number' => $permitNumber,
             'permit_issued_at' => now(),
-            'status' => 'PERMIT_ISSUED',
-            'step' => 4,
-            'step_description' => 'Permit Issued',
+            'previous_step' => $this->current_step,
+            'current_step' => 70,
+            'step_description' => 'Approved - Select Exam Slot',
         ]);
     }
 
     public function markCompleted(): void
     {
         $this->update([
-            'status' => 'COMPLETED',
+            'previous_step' => $this->current_step,
+            'current_step' => 100,
+            'step_description' => 'Admission Decision Finalized',
             'finalized_at' => now(),
         ]);
     }

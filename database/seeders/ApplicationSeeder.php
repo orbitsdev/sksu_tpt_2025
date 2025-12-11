@@ -46,37 +46,37 @@ class ApplicationSeeder extends Seeder
                 return;
             }
 
-            // Create 3 sample applications with different statuses
+            // Create 3 sample applications with different steps
             $applicationsData = [
                 [
-                    'status' => 'COMPLETED',
-                    'step' => 4,
-                    'step_description' => 'Application Completed',
+                    'current_step' => 100,
+                    'step_description' => 'Admission Decision Finalized',
                     'has_payment' => true,
                     'payment_status' => 'VERIFIED',
                     'has_info' => true,
                     'has_slot' => true,
                     'has_permit' => true,
+                    'is_finalized' => true,
                 ],
                 [
-                    'status' => 'PENDING',
-                    'step' => 2,
-                    'step_description' => 'Payment Verification Pending',
+                    'current_step' => 59,
+                    'step_description' => 'Submitted for Verification (Pending)',
                     'has_payment' => true,
                     'payment_status' => 'PENDING',
                     'has_info' => true,
                     'has_slot' => false,
                     'has_permit' => false,
+                    'is_finalized' => false,
                 ],
                 [
-                    'status' => 'PENDING',
-                    'step' => 1,
-                    'step_description' => 'Application Started',
+                    'current_step' => 10,
+                    'step_description' => 'Account Creation',
                     'has_payment' => false,
                     'payment_status' => null,
                     'has_info' => false,
                     'has_slot' => false,
                     'has_permit' => false,
+                    'is_finalized' => false,
                 ],
             ];
 
@@ -89,16 +89,15 @@ class ApplicationSeeder extends Seeder
                 $application = Application::create([
                     'examination_id' => $examination->id,
                     'user_id' => $applicant->id,
-                    'status' => $appData['status'],
-                    'step' => $appData['step'],
+                    'current_step' => $appData['current_step'],
                     'step_description' => $appData['step_description'],
                     'examinee_number' => $appData['has_permit'] ? 'EXM-2025-' . str_pad($index + 1, 6, '0', STR_PAD_LEFT) : null,
                     'permit_number' => $appData['has_permit'] ? 'PERMIT-2025-' . str_pad($index + 1, 6, '0', STR_PAD_LEFT) : null,
                     'permit_issued_at' => $appData['has_permit'] ? now()->subDays(rand(0, 3)) : null,
                     'first_priority_program_id' => $programs->get(0)->id,
                     'second_priority_program_id' => $programs->get(1)->id,
-                    'final_program_id' => $appData['status'] === 'COMPLETED' ? $programs->get(0)->id : null,
-                    'finalized_at' => $appData['status'] === 'COMPLETED' ? now() : null,
+                    'final_program_id' => $appData['is_finalized'] ? $programs->get(0)->id : null,
+                    'finalized_at' => $appData['is_finalized'] ? now() : null,
                 ]);
 
                 // Create payment if needed (now references application)

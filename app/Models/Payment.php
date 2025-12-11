@@ -26,6 +26,7 @@ class Payment extends Model implements HasMedia
         'official_receipt_number',
         'receipt_file',
         'status',
+        'rejection_reason',
         'paid_at',
         'verified_at',
         'verified_by',

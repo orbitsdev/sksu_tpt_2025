@@ -37,19 +37,36 @@ class ApplicantApplications extends Component
         $query = Application::where('user_id', $user->id)
             ->with(['examination.examinationSlots.rooms']);
 
-        // Apply status filter
+        // Apply status filter based on current_step
         if ($this->statusFilter !== 'all') {
-            $query->where('status', $this->statusFilter);
+            if ($this->statusFilter === 'pending') {
+                // Pending: current_step < 70 and not rejected (step 58)
+                $query->where('current_step', '<', 70)
+                      ->where('current_step', '!=', 58);
+            } elseif ($this->statusFilter === 'approved') {
+                // Approved: current_step >= 70
+                $query->where('current_step', '>=', 70);
+            } elseif ($this->statusFilter === 'rejected') {
+                // Rejected: current_step = 58
+                $query->where('current_step', 58);
+            }
         }
 
         $applications = $query->latest()->paginate(10);
 
-        // Get status counts for filter buttons
+        // Get status counts for filter buttons based on current_step
         $statusCounts = [
             'all' => Application::where('user_id', $user->id)->count(),
-            'pending' => Application::where('user_id', $user->id)->where('status', 'pending')->count(),
-            'approved' => Application::where('user_id', $user->id)->where('status', 'approved')->count(),
-            'rejected' => Application::where('user_id', $user->id)->where('status', 'rejected')->count(),
+            'pending' => Application::where('user_id', $user->id)
+                ->where('current_step', '<', 70)
+                ->where('current_step', '!=', 58)
+                ->count(),
+            'approved' => Application::where('user_id', $user->id)
+                ->where('current_step', '>=', 70)
+                ->count(),
+            'rejected' => Application::where('user_id', $user->id)
+                ->where('current_step', 58)
+                ->count(),
         ];
 
         return view('livewire.applicant-applications', [

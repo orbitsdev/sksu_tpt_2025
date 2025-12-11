@@ -1,7 +1,12 @@
 # APPLICATION_STEPS.md
 ### SKSU-TPT Simplified Application Step Model (Milestone-Based)
-This document defines the official system steps used for tracking an applicant’s progress from account creation to final admission decision.
+This document defines the official system steps used for tracking an applicant's progress from account creation to final admission decision.
 Only major milestones are included — no sub-steps, no complicated ranges, no unnecessary progression detail.
+
+> **⚙️ Implementation Note:**
+> All steps are centrally defined in `app/Enums/ApplicationStep.php` enum.
+> To add or update steps, modify the enum file and then update this documentation.
+> This ensures consistency across the entire codebase.
 
 ## 1. APPLICANT STEPS
 
@@ -79,3 +84,70 @@ This is the last step of the application lifecycle.
 - These steps are intentionally simple, milestone-based, and easy to manage in code.
 - Step numbers jump (10, 20, 30…) to allow future sub-steps if needed without breaking existing logic.
 - Step 59 is reused for both first-time submission and re-submission after rejection.
+
+---
+
+## Usage Examples
+
+### Using the ApplicationStep Enum in Code
+
+```php
+use App\Enums\ApplicationStep;
+
+// Get step instance from integer
+$step = ApplicationStep::fromValue(70);
+
+// Get label and description
+echo $step->getLabel();        // "Approved"
+echo $step->getDescription();  // "Application is verified and approved..."
+
+// Get category/phase
+echo $step->getCategory();     // "Approval & Slot Selection"
+
+// Get UI helpers
+echo $step->getColorClass();   // "green"
+echo $step->getIcon();         // "heroicon-o-check-circle"
+
+// Check step conditions
+if ($step->requiresApplicantAction()) {
+    // Show action needed message
+}
+
+if ($step->isTerminal()) {
+    // This is the end of the process
+}
+
+// Update application step
+$application->update([
+    'current_step' => ApplicationStep::APPROVED->value,
+    'step_description' => ApplicationStep::APPROVED->getDescription(),
+]);
+
+// Get all steps for dropdown or documentation
+$allSteps = ApplicationStep::getAllSteps();
+```
+
+### Adding a New Step
+
+1. **Update the Enum** (`app/Enums/ApplicationStep.php`):
+   ```php
+   case NEW_STEP_NAME = 75;  // Add between existing steps
+   ```
+
+2. **Update Helper Methods** in the enum:
+   - Add case to `getLabel()`
+   - Add case to `getDescription()`
+   - Add case to `getCategory()`
+   - Optionally add to condition methods (`isTerminal()`, etc.)
+
+3. **Update This Documentation**: Add the new step description in the appropriate section
+
+4. **Update Related Code**: Search codebase for hardcoded step numbers and replace with enum
+
+### Benefits
+- ✅ Single source of truth for all step definitions
+- ✅ Type-safe step handling with PHP enums
+- ✅ Easy to refactor - change in one place, updates everywhere
+- ✅ Auto-completion support in IDEs
+- ✅ Consistent labels and descriptions across UI
+- ✅ Built-in helper methods for common operations

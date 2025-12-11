@@ -18,7 +18,8 @@
       "WebFetch(domain:filamentphp.com)",
       "WebSearch",
       "WebFetch(domain:github.com)",
-      "Bash(composer require:*)"
+      "Bash(composer require:*)",
+      "Bash(composer show:*)"
     ],
     "deny": [],
     "ask": []

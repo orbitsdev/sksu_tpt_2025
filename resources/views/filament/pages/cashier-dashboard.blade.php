@@ -73,7 +73,7 @@
                             Total collected (today)
                         </div>
                         <div class="mt-1 flex items-baseline gap-2">
-                            <div class="text-2xl font-semibold text-slate-900">₱{{ number_format((float)$this->totalCollectedToday, 2) }}</div>
+                            <div class="text-2xl font-semibold text-slate-900">₱{{ number_format((float)$this->totalCollectedToday, fmod((float)$this->totalCollectedToday, 1) !== 0.0 ? 2 : 0) }}</div>
                             <span class="text-[11px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full">
                                 Summary report
                             </span>
@@ -120,24 +120,30 @@
                             @forelse($this->recentApproved as $approved)
                                 <div class="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
                                     <div class="flex items-center justify-between mb-1">
-                                        <div class="text-[11px] text-slate-500">Application</div>
                                         <div class="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                                            Approved
+                                            ✓ Approved
+                                        </div>
+                                        <div class="text-[10px] text-slate-400">
+                                            {{ $approved->verified_at?->format('g:i A') }}
                                         </div>
                                     </div>
-                                    <div class="text-sm font-semibold text-slate-900">
-                                        {{ $approved->application?->examinee_number ?? 'N/A' }}
+                                    <div class="text-xs font-semibold text-slate-900">
+                                        {{ $approved->applicant?->personalInformation->getFullNameAttribute() ?? $approved->applicant?->name ?? 'Unknown' }}
                                     </div>
-                                    <div class="text-[11px] text-slate-500">
-                                        {{ $approved->applicant?->personalInformation->getFullNameAttribute() ?? 'Unknown' }} · {{ $approved->application?->firstPriorityProgram?->code ?? 'N/A' }}
+                                    <div class="text-[10px] text-slate-500 mt-0.5">
+                                        {{ $approved->application?->firstPriorityProgram?->name ?? 'Program not selected' }}
                                     </div>
-                                    <div class="mt-2 text-[11px] text-slate-500">
-                                        Amount:
-                                        <span class="font-semibold text-slate-900">₱{{ number_format($approved->amount, 2) }}</span>
+                                    <div class="mt-2 pt-2 border-t border-slate-200 flex items-center justify-between">
+                                        <div class="text-[10px] text-slate-500">
+                                            Amount Paid
+                                        </div>
+                                        <div class="text-xs font-semibold text-slate-900">₱{{ number_format($approved->amount, fmod($approved->amount, 1) !== 0.0 ? 2 : 0) }}</div>
                                     </div>
-                                    <div class="text-[10px] text-slate-400">
-                                        {{ $approved->verified_at?->format('M d · g:i A') ?? 'N/A' }}
-                                    </div>
+                                    @if($approved->application?->examinee_number)
+                                        <div class="mt-1 text-[10px] text-slate-400">
+                                            Examinee #{{ $approved->application->examinee_number }}
+                                        </div>
+                                    @endif
                                 </div>
                             @empty
                                 <div class="text-center text-slate-400 py-8">

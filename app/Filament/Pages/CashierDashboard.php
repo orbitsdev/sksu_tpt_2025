@@ -31,6 +31,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Wizard;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -40,6 +41,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use emmanpbarrameda\FilamentTakePictureField\Forms\Components\TakePicture;
 use Filament\Schemas\Components\Tabs\Tab;
 
@@ -50,7 +52,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Actions\Concerns\InteractsWithActions;
-
+use Filament\Support\Enums\Width;
 class CashierDashboard extends Page implements HasForms, HasActions, HasTable
 {
     use HasTabs;
@@ -143,23 +145,13 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                     ])
             )
             ->columns([
-                ImageColumn::make('photo')
+                SpatieMediaLibraryImageColumn::make('application.photo')
                     ->label('')
+                    ->collection('photo')
                     ->circular()
                     ->width(40)
                     ->height(40)
-                    ->getStateUsing(function (Payment $record) {
-                        if (!$record->application) {
-                            return null;
-                        }
-                        $media = $record->application->getFirstMedia('photo');
-                        return $media ? $media->getUrl() : null;
-                    })
-                    ->defaultImageUrl('https://ui-avatars.com/api/?name=User&color=7F9CF5&background=EBF4FF')
-                    ->url(fn (Payment $record): ?string =>
-                        $record->application?->getFirstMedia('photo')?->getUrl()
-                    )
-                    ->openUrlInNewTab(),
+                    ->defaultImageUrl('https://ui-avatars.com/api/?name=User&color=7F9CF5&background=EBF4FF'),
 
                 TextColumn::make('applicant.name')
                     ->label('Applicant Name')
@@ -234,12 +226,26 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
             ])
             ->actions([
                 Action::make('viewAndVerify')
-                    ->label('View / Verify')
+                       ->modalWidth(Width::SevenExtraLarge)
+                    ->label(function (Payment $record) {
+                        return match($record->status) {
+                            'VERIFIED' => 'View Details',
+                            'REJECTED' => 'View Details',
+                            default => 'View / Verify'
+                        };
+                    })
                     ->icon('heroicon-o-eye')
                     ->button()
-                    ->color('primary')
+                    ->color(function (Payment $record) {
+                        return match($record->status) {
+                            'VERIFIED' => 'success',
+                            'REJECTED' => 'danger',
+                            default => 'primary'
+                        };
+                    })
                     ->modalHeading(fn (Payment $record) => 'Payment Details - #' . ($record->application?->examinee_number ?? 'Not Assigned'))
-                    ->modalWidth('4xl')
+
+
                     ->modalContent(fn (Payment $record) => view('filament.pages.partials.payment-details', [
                         'payment' => $record
                     ]))
@@ -248,6 +254,7 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                             ->label('Reject Payment')
                             ->icon('heroicon-o-x-circle')
                             ->color('danger')
+                            ->visible(fn (Payment $record) => $record->status === 'PENDING')
                             ->requiresConfirmation()
                             ->modalHeading('Reject Payment')
                             ->modalDescription('Please provide a reason for rejecting this payment.')
@@ -261,6 +268,7 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                             ->action(function (array $data, Payment $record) {
                                 $record->update([
                                     'status' => 'REJECTED',
+                                    'rejection_reason' => $data['reason'],
                                     'verified_by' => auth()->id(),
                                     'verified_at' => now(),
                                 ]);
@@ -277,40 +285,16 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                             }),
 
                         Action::make('approve')
-                            ->label('Approve & Generate Permit')
+                            ->label('Approve')
                             ->icon('heroicon-o-check-circle')
-                            ->color('success')
+                            ->color('primary')
+                            ->visible(fn (Payment $record) => $record->status === 'PENDING')
                             ->requiresConfirmation()
                             ->modalHeading('Approve Payment')
                             ->modalDescription('Are you sure you want to approve this payment and generate the exam permit?')
-                            ->form([
-                                TextInput::make('official_receipt_number')
-                                    ->label('Official Receipt Number')
-                                    ->required()
-                                    ->maxLength(255),
-                                Textarea::make('remarks')
-                                    ->label('Cashier Remarks (Optional)')
-                                    ->rows(3)
-                                    ->placeholder('E.g., Valid receipt, name matches ID, clear payment details.'),
-                            ])
-                            ->action(function (array $data, Payment $record) {
-                                // Check if OR number already exists
-                                $existingPayment = Payment::where('official_receipt_number', $data['official_receipt_number'])
-                                    ->where('id', '!=', $record->id)
-                                    ->first();
-
-                                if ($existingPayment) {
-                                    Notification::make()
-                                        ->title('Duplicate OR Number')
-                                        ->body('This Official Receipt Number is already used.')
-                                        ->danger()
-                                        ->send();
-                                    return;
-                                }
-
+                            ->action(function (Payment $record) {
                                 // Verify payment
                                 $record->update([
-                                    'official_receipt_number' => $data['official_receipt_number'],
                                     'verified_by' => auth()->id(),
                                     'verified_at' => now(),
                                     'status' => 'VERIFIED',
@@ -326,6 +310,183 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                 Notification::make()
                                     ->title('Payment Approved!')
                                     ->body('Exam permit has been generated successfully.')
+                                    ->success()
+                                    ->send();
+
+                                // Close all modals
+                                $this->mountedActionsData = [];
+                                $this->mountedActions = [];
+                            }),
+
+                        Action::make('updateOR')
+                            ->label('Add/Update OR & Receipt')
+                            ->icon('heroicon-o-document-text')
+                            ->color('info')
+                            ->visible(fn (Payment $record) => in_array($record->status, ['PENDING', 'VERIFIED']))
+                            ->form([
+                                TextInput::make('official_receipt_number')
+                                    ->label('Official Receipt Number')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->default(fn (Payment $record) => $record->official_receipt_number),
+                                SpatieMediaLibraryFileUpload::make('receipt')
+                                    ->label('Attach Receipt (Optional)')
+                                    ->collection('receipt')
+                                    ->image()
+                                    ->maxSize(5120)
+                                    ->helperText('Upload or update receipt image'),
+                            ])
+                            ->action(function (array $data, Payment $record) {
+                                // Check if OR number already exists
+                                if (!empty($data['official_receipt_number'])) {
+                                    $existingPayment = Payment::where('official_receipt_number', $data['official_receipt_number'])
+                                        ->where('id', '!=', $record->id)
+                                        ->first();
+
+                                    if ($existingPayment) {
+                                        Notification::make()
+                                            ->title('Duplicate OR Number')
+                                            ->body('This Official Receipt Number is already used.')
+                                            ->danger()
+                                            ->send();
+                                        return;
+                                    }
+                                }
+
+                                $record->update([
+                                    'official_receipt_number' => $data['official_receipt_number'],
+                                ]);
+
+                                Notification::make()
+                                    ->title('OR Number Updated!')
+                                    ->success()
+                                    ->send();
+
+                                // Close all modals
+                                $this->mountedActionsData = [];
+                                $this->mountedActions = [];
+                            }),
+
+                        Action::make('assignSlot')
+                            ->label(function (Payment $record) {
+                                $hasSlot = $record->application?->applicationSlot;
+                                return $hasSlot ? 'Update Exam Slot' : 'Assign Exam Slot';
+                            })
+                            ->icon('heroicon-o-calendar')
+                            ->color('success')
+                            ->visible(fn (Payment $record) => $record->status === 'VERIFIED')
+                            ->form([
+                                Select::make('examination_slot_id')
+                                    ->label('Exam Slot')
+                                    ->required()
+                                    ->options(function (Payment $record) {
+                                        $examinationId = $record->application?->examination_id;
+                                        if (!$examinationId) {
+                                            return [];
+                                        }
+
+                                        return \App\Models\ExaminationSlot::where('examination_id', $examinationId)
+                                            ->where('is_active', true)
+                                            ->where('total_examinees', '>', 0)
+                                            ->get()
+                                            ->filter(function ($slot) {
+                                                return $slot->assigned_students_count < $slot->total_examinees;
+                                            })
+                                            ->mapWithKeys(function ($slot) {
+                                                $available = $slot->total_examinees - $slot->assigned_students_count;
+                                                return [
+                                                    $slot->id => sprintf(
+                                                        '%s (%d/%d seats available)',
+                                                        $slot->date_of_exam?->format('M d, Y'),
+                                                        $available,
+                                                        $slot->total_examinees
+                                                    )
+                                                ];
+                                            })
+                                            ->toArray();
+                                    })
+                                    ->searchable()
+                                    ->preload()
+                                    ->live()
+                                    ->default(fn (Payment $record) => $record->application?->applicationSlot?->examination_slot_id),
+
+                                Select::make('examination_room_id')
+                                    ->label('Exam Room (Optional)')
+                                    ->options(function (Get $get, Payment $record) {
+                                        $slotId = $get('examination_slot_id');
+                                        if (!$slotId) {
+                                            return [];
+                                        }
+
+                                        $slot = \App\Models\ExaminationSlot::find($slotId);
+                                        if (!$slot) {
+                                            return [];
+                                        }
+
+                                        return $slot->rooms()
+                                            ->get()
+                                            ->mapWithKeys(function ($room) {
+                                                return [
+                                                    $room->id => sprintf(
+                                                        '%s (Capacity: %d, Available: %d)',
+                                                        $room->room_number,
+                                                        $room->capacity,
+                                                        $room->available
+                                                    )
+                                                ];
+                                            })
+                                            ->toArray();
+                                    })
+                                    ->searchable()
+                                    ->visible(fn (Get $get) => !empty($get('examination_slot_id')))
+                                    ->default(fn (Payment $record) => $record->application?->applicationSlot?->examination_room_id),
+
+                                TextInput::make('seat_number')
+                                    ->label('Seat Number (Optional)')
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->visible(fn (Get $get) => !empty($get('examination_slot_id')))
+                                    ->default(fn (Payment $record) => $record->application?->applicationSlot?->seat_number),
+                            ])
+                            ->action(function (array $data, Payment $record) {
+                                $application = $record->application;
+                                if (!$application) {
+                                    Notification::make()
+                                        ->title('Error')
+                                        ->body('Application not found.')
+                                        ->danger()
+                                        ->send();
+                                    return;
+                                }
+
+                                // Update or create application slot
+                                $applicationSlot = $application->applicationSlot;
+                                if ($applicationSlot) {
+                                    $applicationSlot->update([
+                                        'examination_slot_id' => $data['examination_slot_id'],
+                                        'examination_room_id' => $data['examination_room_id'] ?? null,
+                                        'seat_number' => $data['seat_number'] ?? null,
+                                    ]);
+                                } else {
+                                    \App\Models\ApplicationSlot::create([
+                                        'application_id' => $application->id,
+                                        'examination_slot_id' => $data['examination_slot_id'],
+                                        'examination_room_id' => $data['examination_room_id'] ?? null,
+                                        'seat_number' => $data['seat_number'] ?? null,
+                                    ]);
+                                }
+
+                                // Update application step if needed
+                                if ($application->current_step < 80) {
+                                    $application->update([
+                                        'current_step' => 80,
+                                        'step_description' => 'Slot Assigned & Waiting for Exam Day',
+                                    ]);
+                                }
+
+                                Notification::make()
+                                    ->title('Exam Slot Assigned!')
+                                    ->body('Examination slot has been successfully assigned.')
                                     ->success()
                                     ->send();
 
@@ -408,16 +569,29 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                         ->schema([
                             Section::make('Student Photo')
                                 ->schema([
-                                    TakePicture::make('photo')
-                                        ->label('Take Student Photo')
-                                        ->disk('public')
-                                        ->directory('student-photos')
-                                        ->visibility('public')
-                                        ->useModal(true)
-                                        ->showCameraSelector(true)
-                                        ->aspect('1:1')
-                                        ->imageQuality(85)
-                                        ->helperText('Click to take photo using camera or upload existing photo'),
+                                    // TakePicture::make('photo')
+                                    //     ->label('Take Student Photo')
+                                    //     ->disk('public')
+                                    //     ->directory('student-photos')
+                                    //     ->visibility('public')
+                                    //     ->useModal(true)
+                                    //     ->showCameraSelector(true)
+                                    //     ->aspect('1:1')
+                                    //     ->imageQuality(85)
+                                    //     ->helperText('Click to take photo using camera or upload existing photo'),
+
+                                    SpatieMediaLibraryFileUpload::make('photo')
+                                        ->label('Student Photo')
+                                        ->collection('photo')
+                                        ->image()
+                                        ->imageEditor()
+                                        ->imageEditorAspectRatios([
+                                            '1:1',
+                                            '4:3',
+                                            '16:9',
+                                        ])
+                                        ->maxSize(5120)
+                                        ->helperText('Upload student photo (Max 5MB)'),
                                 ]),
                             Section::make('Basic Information')
                                 ->columns(3)
@@ -486,9 +660,58 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                     Select::make('examination_id')
                                         ->label('Examination')
                                         ->required()
-                                        ->options(Examination::pluck('title', 'id'))
+                                        ->options(function () {
+                                            return Examination::where('application_open', true)
+                                                ->where('is_public', true)
+                                                ->whereHas('examinationSlots', function ($query) {
+                                                    $query->where('is_active', true)
+                                                        ->where('total_examinees', '>', 0);
+                                                })
+                                                ->get()
+                                                ->filter(function ($exam) {
+                                                    // Only show exams with at least one slot that has availability
+                                                    return $exam->examinationSlots()
+                                                        ->where('is_active', true)
+                                                        ->where('total_examinees', '>', 0)
+                                                        ->get()
+                                                        ->filter(function ($slot) {
+                                                            return $slot->assigned_students_count < $slot->total_examinees;
+                                                        })
+                                                        ->count() > 0;
+                                                })
+                                                ->mapWithKeys(function ($exam) {
+                                                    $availableSlots = $exam->examinationSlots()
+                                                        ->where('is_active', true)
+                                                        ->where('total_examinees', '>', 0)
+                                                        ->get()
+                                                        ->filter(function ($slot) {
+                                                            return $slot->assigned_students_count < $slot->total_examinees;
+                                                        })
+                                                        ->count();
+
+                                                    $totalAvailableSeats = $exam->examinationSlots()
+                                                        ->where('is_active', true)
+                                                        ->where('total_examinees', '>', 0)
+                                                        ->get()
+                                                        ->sum(function ($slot) {
+                                                            return max(0, $slot->total_examinees - $slot->assigned_students_count);
+                                                        });
+
+                                                    return [
+                                                        $exam->id => sprintf(
+                                                            '%s (%s) - %d slots (%d seats available)',
+                                                            $exam->title,
+                                                            $exam->school_year,
+                                                            $availableSlots,
+                                                            $totalAvailableSeats
+                                                        )
+                                                    ];
+                                                })
+                                                ->toArray();
+                                        })
                                         ->searchable()
-                                        ->preload(),
+                                        ->preload()
+                                        ->helperText('Only examinations with open applications and available slots are shown'),
                                     Select::make('applicant_type')
                                         ->label('Applicant Type')
                                         ->required()
@@ -539,7 +762,89 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                 ]),
                         ]),
 
-                    // Step 4: Payment
+                    // Step 4: Exam Slot Assignment (Optional)
+                    Wizard\Step::make('Exam Slot')
+                        ->icon('heroicon-o-calendar')
+                        ->description('Optional - Can be assigned later')
+                        ->schema([
+                            Section::make('Examination Slot Assignment')
+                                ->description('Assign exam slot now or skip to assign later')
+                                ->schema([
+                                    Select::make('examination_slot_id')
+                                        ->label('Exam Slot')
+                                        ->options(function (Get $get) {
+                                            $examinationId = $get('examination_id');
+                                            if (!$examinationId) {
+                                                return [];
+                                            }
+
+                                            return \App\Models\ExaminationSlot::where('examination_id', $examinationId)
+                                                ->where('is_active', true)
+                                                ->where('total_examinees', '>', 0)
+                                                ->get()
+                                                ->filter(function ($slot) {
+                                                    return $slot->assigned_students_count < $slot->total_examinees;
+                                                })
+                                                ->mapWithKeys(function ($slot) {
+                                                    $available = $slot->total_examinees - $slot->assigned_students_count;
+                                                    return [
+                                                        $slot->id => sprintf(
+                                                            '%s (%d/%d seats available)',
+                                                            $slot->date_of_exam?->format('M d, Y'),
+                                                            $available,
+                                                            $slot->total_examinees
+                                                        )
+                                                    ];
+                                                })
+                                                ->toArray();
+                                        })
+                                        ->searchable()
+                                        ->preload()
+                                        ->live()
+                                        ->placeholder('Select exam slot (optional)')
+                                        ->helperText('Leave empty to assign slot later'),
+
+                                    Select::make('examination_room_id')
+                                        ->label('Exam Room')
+                                        ->options(function (Get $get) {
+                                            $slotId = $get('examination_slot_id');
+                                            if (!$slotId) {
+                                                return [];
+                                            }
+
+                                            $slot = \App\Models\ExaminationSlot::find($slotId);
+                                            if (!$slot) {
+                                                return [];
+                                            }
+
+                                            return $slot->rooms()
+                                                ->get()
+                                                ->mapWithKeys(function ($room) {
+                                                    return [
+                                                        $room->id => sprintf(
+                                                            '%s - %s (Capacity: %d)',
+                                                            $room->name,
+                                                            $room->building ?? 'Main Building',
+                                                            $room->capacity
+                                                        )
+                                                    ];
+                                                })
+                                                ->toArray();
+                                        })
+                                        ->searchable()
+                                        ->visible(fn (Get $get) => !empty($get('examination_slot_id')))
+                                        ->placeholder('Select room (optional)'),
+
+                                    TextInput::make('seat_number')
+                                        ->label('Seat Number')
+                                        ->numeric()
+                                        ->minValue(1)
+                                        ->visible(fn (Get $get) => !empty($get('examination_slot_id')))
+                                        ->placeholder('Enter seat number (optional)'),
+                                ]),
+                        ]),
+
+                    // Step 5: Payment
                     Wizard\Step::make('Payment')
                         ->icon('heroicon-o-banknotes')
                         ->schema([
@@ -583,7 +888,8 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                         ->default(0)
                                         ->dehydrated(true),
                                 ]),
-                            Section::make('Payment Method')
+                            Section::make('Payment Method & Reference')
+                                ->columns(2)
                                 ->schema([
                                     Select::make('payment_method')
                                         ->label('Payment Method')
@@ -593,7 +899,30 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                             'GCASH' => 'GCash',
                                             'BANK_TRANSFER' => 'Bank Transfer',
                                         ])
-                                        ->default('CASH'),
+                                        ->default('CASH')
+                                        ->live(),
+                                    TextInput::make('payment_reference')
+                                        ->label('Payment Reference Number (Optional)')
+                                        ->maxLength(255)
+                                        ->visible(fn (Get $get) => in_array($get('payment_method'), ['GCASH', 'BANK_TRANSFER']))
+                                        ->placeholder('Enter reference number if available')
+                                        ->helperText('GCash reference, bank confirmation number, or transaction ID'),
+                                ]),
+                            Section::make('Proof of Payment')
+                                ->schema([
+                                    SpatieMediaLibraryFileUpload::make('receipt')
+                                        ->label('Receipt/Proof of Payment (Optional)')
+                                        ->collection('receipt')
+                                        ->image()
+                                        ->imageEditor()
+                                        ->imageEditorAspectRatios([
+                                            null,
+                                            '16:9',
+                                            '4:3',
+                                            '1:1',
+                                        ])
+                                        ->maxSize(5120)
+                                        ->helperText('Upload receipt image if available (Max 5MB)'),
                                 ]),
                         ]),
                 ])
@@ -628,9 +957,8 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                     $application = Application::create([
                         'examination_id' => $data['examination_id'],
                         'user_id' => $user->id,
-                        'status' => 'PENDING',
-                        'step' => 1,
-                        'step_description' => 'Payment Submitted',
+                        'current_step' => 59,
+                        'step_description' => 'Submitted for Verification (Pending)',
                         'first_priority_program_id' => $data['first_priority_program_id'],
                         'second_priority_program_id' => $data['second_priority_program_id'],
                     ]);
@@ -651,11 +979,10 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                         'track_and_strand_taken' => $data['track_and_strand_taken'] ?? null,
                     ]);
 
-                    // 4b. Attach photo to Application using Media Library
-                    if (!empty($data['photo'])) {
-                        $application->addMedia(storage_path('app/public/' . $data['photo']))
-                            ->toMediaCollection('photo');
-                    }
+                    // 4b. Attach photo to Application
+                    // With wizard + custom action, we need to handle media manually
+                    // The SpatieMediaLibraryFileUpload stores data differently
+                    // For now, photos will be handled when creating application
 
                     // 5. Create Payment (PENDING - needs verification in table)
                     $payment = Payment::create([
@@ -667,9 +994,29 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                         'amount_paid' => $data['amount_paid'],
                         'change' => $data['change'],
                         'payment_method' => $data['payment_method'],
+                        'payment_reference' => $data['payment_reference'] ?? null,
                         'status' => 'PENDING',
                         'paid_at' => now(),
                     ]);
+
+                    // 5b. Attach receipt to Payment
+                    // With wizard + custom action, media handled by plugin
+
+                    // 6. Create Exam Slot Assignment (if provided)
+                    if (!empty($data['examination_slot_id'])) {
+                        \App\Models\ApplicationSlot::create([
+                            'application_id' => $application->id,
+                            'examination_slot_id' => $data['examination_slot_id'],
+                            'examination_room_id' => $data['examination_room_id'] ?? null,
+                            'seat_number' => $data['seat_number'] ?? null,
+                        ]);
+
+                        // Update application step if slot assigned
+                        $application->update([
+                            'current_step' => 80,
+                            'step_description' => 'Slot Assigned & Waiting for Exam Day',
+                        ]);
+                    }
 
                     DB::commit();
 

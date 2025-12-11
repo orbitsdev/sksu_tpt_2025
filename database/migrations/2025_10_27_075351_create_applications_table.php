@@ -43,8 +43,7 @@ return new class extends Migration
             $table->timestamps();
 
             // indexes for performance
-            $table->index('status');
-            $table->index('step');
+            $table->index('current_step');
             $table->index('examinee_number');
             $table->index('permit_number');
         });
