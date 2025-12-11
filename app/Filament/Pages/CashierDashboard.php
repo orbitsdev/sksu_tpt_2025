@@ -238,7 +238,7 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                     ->button()
                     ->color(function (Payment $record) {
                         return match($record->status) {
-                            'VERIFIED' => 'success',
+                            'VERIFIED' => 'primary',
                             'REJECTED' => 'danger',
                             default => 'primary'
                         };
@@ -385,29 +385,39 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                             return [];
                                         }
 
-                                        return \App\Models\ExaminationSlot::where('examination_id', $examinationId)
+                                        $slots = \App\Models\ExaminationSlot::where('examination_id', $examinationId)
                                             ->where('is_active', true)
                                             ->where('total_examinees', '>', 0)
                                             ->get()
                                             ->filter(function ($slot) {
                                                 return $slot->assigned_students_count < $slot->total_examinees;
-                                            })
-                                            ->mapWithKeys(function ($slot) {
-                                                $available = $slot->total_examinees - $slot->assigned_students_count;
-                                                return [
-                                                    $slot->id => sprintf(
-                                                        '%s (%d/%d seats available)',
-                                                        $slot->date_of_exam?->format('M d, Y'),
-                                                        $available,
-                                                        $slot->total_examinees
-                                                    )
-                                                ];
-                                            })
-                                            ->toArray();
+                                            });
+
+                                        if ($slots->isEmpty()) {
+                                            return [];
+                                        }
+
+                                        return $slots->mapWithKeys(function ($slot) {
+                                            $available = $slot->total_examinees - $slot->assigned_students_count;
+                                            return [
+                                                $slot->id => sprintf(
+                                                    '%s (%d/%d seats available)',
+                                                    $slot->date_of_exam?->format('M d, Y'),
+                                                    $available,
+                                                    $slot->total_examinees
+                                                )
+                                            ];
+                                        })->toArray();
                                     })
                                     ->searchable()
                                     ->preload()
                                     ->live()
+                                    ->helperText(fn (Payment $record) =>
+                                        !$record->application?->examination_id
+                                            ? 'No examination assigned to this application.'
+                                            : 'Select an available exam slot.'
+                                    )
+                                    ->placeholder('No available slots')
                                     ->default(fn (Payment $record) => $record->application?->applicationSlot?->examination_slot_id),
 
                                 Select::make('examination_room_id')
@@ -762,89 +772,7 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                 ]),
                         ]),
 
-                    // Step 4: Exam Slot Assignment (Optional)
-                    Wizard\Step::make('Exam Slot')
-                        ->icon('heroicon-o-calendar')
-                        ->description('Optional - Can be assigned later')
-                        ->schema([
-                            Section::make('Examination Slot Assignment')
-                                ->description('Assign exam slot now or skip to assign later')
-                                ->schema([
-                                    Select::make('examination_slot_id')
-                                        ->label('Exam Slot')
-                                        ->options(function (Get $get) {
-                                            $examinationId = $get('examination_id');
-                                            if (!$examinationId) {
-                                                return [];
-                                            }
-
-                                            return \App\Models\ExaminationSlot::where('examination_id', $examinationId)
-                                                ->where('is_active', true)
-                                                ->where('total_examinees', '>', 0)
-                                                ->get()
-                                                ->filter(function ($slot) {
-                                                    return $slot->assigned_students_count < $slot->total_examinees;
-                                                })
-                                                ->mapWithKeys(function ($slot) {
-                                                    $available = $slot->total_examinees - $slot->assigned_students_count;
-                                                    return [
-                                                        $slot->id => sprintf(
-                                                            '%s (%d/%d seats available)',
-                                                            $slot->date_of_exam?->format('M d, Y'),
-                                                            $available,
-                                                            $slot->total_examinees
-                                                        )
-                                                    ];
-                                                })
-                                                ->toArray();
-                                        })
-                                        ->searchable()
-                                        ->preload()
-                                        ->live()
-                                        ->placeholder('Select exam slot (optional)')
-                                        ->helperText('Leave empty to assign slot later'),
-
-                                    Select::make('examination_room_id')
-                                        ->label('Exam Room')
-                                        ->options(function (Get $get) {
-                                            $slotId = $get('examination_slot_id');
-                                            if (!$slotId) {
-                                                return [];
-                                            }
-
-                                            $slot = \App\Models\ExaminationSlot::find($slotId);
-                                            if (!$slot) {
-                                                return [];
-                                            }
-
-                                            return $slot->rooms()
-                                                ->get()
-                                                ->mapWithKeys(function ($room) {
-                                                    return [
-                                                        $room->id => sprintf(
-                                                            '%s - %s (Capacity: %d)',
-                                                            $room->name,
-                                                            $room->building ?? 'Main Building',
-                                                            $room->capacity
-                                                        )
-                                                    ];
-                                                })
-                                                ->toArray();
-                                        })
-                                        ->searchable()
-                                        ->visible(fn (Get $get) => !empty($get('examination_slot_id')))
-                                        ->placeholder('Select room (optional)'),
-
-                                    TextInput::make('seat_number')
-                                        ->label('Seat Number')
-                                        ->numeric()
-                                        ->minValue(1)
-                                        ->visible(fn (Get $get) => !empty($get('examination_slot_id')))
-                                        ->placeholder('Enter seat number (optional)'),
-                                ]),
-                        ]),
-
-                    // Step 5: Payment
+                    // Step 4: Payment
                     Wizard\Step::make('Payment')
                         ->icon('heroicon-o-banknotes')
                         ->schema([
@@ -1001,22 +929,6 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
 
                     // 5b. Attach receipt to Payment
                     // With wizard + custom action, media handled by plugin
-
-                    // 6. Create Exam Slot Assignment (if provided)
-                    if (!empty($data['examination_slot_id'])) {
-                        \App\Models\ApplicationSlot::create([
-                            'application_id' => $application->id,
-                            'examination_slot_id' => $data['examination_slot_id'],
-                            'examination_room_id' => $data['examination_room_id'] ?? null,
-                            'seat_number' => $data['seat_number'] ?? null,
-                        ]);
-
-                        // Update application step if slot assigned
-                        $application->update([
-                            'current_step' => 80,
-                            'step_description' => 'Slot Assigned & Waiting for Exam Day',
-                        ]);
-                    }
 
                     DB::commit();
 
