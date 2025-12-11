@@ -19,11 +19,11 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
 
             // workflow status
-            $table->string('status')->default('PENDING')
-                ->comment('PENDING, PAID, VERIFIED, SLOT_PENDING, AWAITING_SCHEDULE, SCHEDULED, PERMIT_ISSUED, COMPLETED, CANCELLED, BLOCKED');
 
-            $table->unsignedTinyInteger('step')->default(1)
-                ->comment('Numeric progress tracker 1-4, etc.');
+            $table->unsignedTinyInteger('previous_step')->nullable()
+                ->comment('Holds last completed step for tracking regressions.');
+            $table->unsignedTinyInteger('current_step')->default(10)
+                ->comment('Current step in the application workflow.');
 
             $table->string('step_description')->nullable()
                 ->comment('User-friendly explanation of current step.');

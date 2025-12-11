@@ -40,6 +40,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
+use emmanpbarrameda\FilamentTakePictureField\Forms\Components\TakePicture;
 use Filament\Schemas\Components\Tabs\Tab;
 
 use Filament\Tables\Filters\SelectFilter;
@@ -269,6 +270,10 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                     ->body('The payment has been rejected. Applicant will be notified.')
                                     ->warning()
                                     ->send();
+
+                                // Close all modals
+                                $this->mountedActionsData = [];
+                                $this->mountedActions = [];
                             }),
 
                         Action::make('approve')
@@ -323,6 +328,10 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                                     ->body('Exam permit has been generated successfully.')
                                     ->success()
                                     ->send();
+
+                                // Close all modals
+                                $this->mountedActionsData = [];
+                                $this->mountedActions = [];
                             }),
                     ])
                     ->modalSubmitAction(false)
@@ -399,18 +408,16 @@ class CashierDashboard extends Page implements HasForms, HasActions, HasTable
                         ->schema([
                             Section::make('Student Photo')
                                 ->schema([
-                                    FileUpload::make('photo')
-                                        ->label('Student Photo')
-                                        ->image()
-                                        ->imageEditor()
-                                        ->imageEditorAspectRatios([
-                                            '1:1',
-                                        ])
-                                        ->maxSize(2048)
-                                        ->helperText('Take or upload student photo (ID size)')
+                                    TakePicture::make('photo')
+                                        ->label('Take Student Photo')
                                         ->disk('public')
                                         ->directory('student-photos')
-                                        ->visibility('public'),
+                                        ->visibility('public')
+                                        ->useModal(true)
+                                        ->showCameraSelector(true)
+                                        ->aspect('1:1')
+                                        ->imageQuality(85)
+                                        ->helperText('Click to take photo using camera or upload existing photo'),
                                 ]),
                             Section::make('Basic Information')
                                 ->columns(3)

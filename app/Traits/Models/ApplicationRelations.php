@@ -7,8 +7,9 @@ use App\Models\Payment;
 use App\Models\Program;
 use App\Models\Examination;
 use App\Models\ApplicationSlot;
-use App\Models\ApplicationInformation;
 use App\Models\HonorOrAwardsReceived;
+use App\Models\ApplicationActivityLog;
+use App\Models\ApplicationInformation;
 
 trait  ApplicationRelations
 {
@@ -57,5 +58,10 @@ trait  ApplicationRelations
     public function applicationSlot()
     {
         return $this->hasOne(ApplicationSlot::class);
+    }
+
+    public function applicationActivityLogs()
+    {
+        return $this->hasMany(ApplicationActivityLog::class);
     }
 }

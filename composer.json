@@ -8,6 +8,7 @@
     "require": {
         "php": "^8.2",
         "codeat3/blade-fontisto-icons": "^1.5",
+        "emmanpbarrameda/filament-take-picture-field": "1.1",
         "filament/filament": "4.0",
         "filament/forms": "4.0",
         "filament/spatie-laravel-media-library-plugin": "4.0",
